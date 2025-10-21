@@ -1,0 +1,367 @@
+*** Begin Patch
+*** Update File: scripts.js
+@@
+-function updateVisiblePlans() {
+-    const finish = document.getElementById('finish').value;
+-    const marunagePlan = document.getElementById('marunage-plan');
+-    const yukkuriPlan = document.getElementById('yukkuri-plan');
+-    const kakikomiPlan = document.getElementById('kakikomi-plan');
+-    const sakuttoPlan = document.getElementById('sakutto-plan');
+-
+-    if (finish === '写真仕上げ') {
+-        marunagePlan.style.display = 'none';
+-        sakuttoPlan.style.display = 'none';
+-    } else {
+-        marunagePlan.style.display = 'block';
+-        sakuttoPlan.style.display = 'block';
+-    }
+-}
++// 価格設定（金額の一元管理）
++const PRICING = {
++    postcard: { perUnit: 85 },
++    inputAssistanceFee: 1500,
++    discounts: { super_early: 0.2, early: 0.1, normal: 0 },
++    dmCoupon: { super_early: 500, early: 500, normal: 300 },
++    finishes: {
++        photo: {
++            base: { simple: 2200, light: 2800, premium: 4800, high: 5400, standard: 3800 },
++            stepSize: 10, initialFreeQty: 10, increments: [{ upto: Infinity, perStep: 660 }]
++        },
++        print: {
++            base: { simple: 2000, light: 2600, premium: 4600, high: 5200, standard: 3600 },
++            stepSize: 10, initialFreeQty: 10,
++            increments: [
++                { upto: 50, perStep: 600 },
++                { upto: 100, perStep: 550 },
++                { upto: Infinity, perStep: 500 }
++            ]
++        }
++    },
++    plans: {
++        self: { addFixed: 0 },
++        sakutto: { addFixed: 1480 },
++        omakase: { perUnitByDiscount: { super_early: 100, early: 200, normal: 200 } },
++        marunageExtra: 1960
++    }
++};
++
++// ラベル正規化（日本語表記の揺らぎ・文字化けに強く）
++function normalizeFinish(label) {
++    if (!label) return 'print';
++    return /写真/.test(label) ? 'photo' : 'print';
++}
++function normalizeGrade(label) {
++    if (!label) return 'standard';
++    if (/プレミ/.test(label)) return 'premium';
++    if (/ハイ/.test(label)) return 'high';
++    if (/スタン/.test(label)) return 'standard';
++    if (/ライ/.test(label)) return 'light';
++    return 'simple';
++}
++function normalizeDiscount(label) {
++    if (!label) return 'normal';
++    const hasEarly = /早/.test(label);
++    const hasSuper = /超/.test(label) || /超早/.test(label);
++    if (hasEarly && hasSuper) return 'super_early';
++    if (hasEarly) return 'early';
++    return 'normal';
++}
++
++function updateVisiblePlans() {
++    const finishRaw = document.getElementById('finish').value;
++    const finish = normalizeFinish(finishRaw);
++    const marunagePlan = document.getElementById('marunage-plan');
++    const yukkuriPlan = document.getElementById('yukkuri-plan');
++    const kakikomiPlan = document.getElementById('kakikomi-plan');
++    const sakuttoPlan = document.getElementById('sakutto-plan');
++
++    if (finish === 'photo') {
++        if (marunagePlan) marunagePlan.style.display = 'none';
++        if (sakuttoPlan) sakuttoPlan.style.display = 'none';
++    } else {
++        if (marunagePlan) marunagePlan.style.display = 'block';
++        if (sakuttoPlan) sakuttoPlan.style.display = 'block';
++    }
++}
+@@
+-function calculatePrice() {
+-    const quantity = parseInt(document.getElementById('quantity').value) || 0;
+-
+-    const grade = document.getElementById('grade').value;
+-    const finish = document.getElementById('finish').value;
+-    const discount = document.getElementById('discount').value;
+-    const bringYourOwn = document.getElementById('bring-your-own').checked;
+-    const dmCoupon = document.getElementById('dm-option').checked;
+-    const inputAssistance = document.getElementById('input-assistance').checked;
+-
+-    // 印刷代の計?E
+-    let selfPrice = calculateBasePrice(grade, finish, quantity);
+-
+-   
+-    // 割引?E適用
+-    switch(discount) {
+-        case '趁E??割':
+-            selfPrice = Math.floor(selfPrice * 0.8); // 20%オチE
+-            break;
+-        case '早割':
+-            selfPrice = Math.floor(selfPrice * 0.9); // 10%オチE
+-            break;
+-        // '通常料??'の場合?E何もしなぁE
+-    }
+-
+-    // はがき持込なし?E追加料??
+-    if (!bringYourOwn) {
+-        selfPrice += quantity * 85;
+-    }
+-
+-    // DMクーポンの適用
+-    if(dmCoupon){
+-        switch(discount) {
+-            case '趁E??割':
+-            case '早割':
+-                selfPrice -= 500;
+-                break;
+-            case '通常料??':
+-                selfPrice -= 300;
+-                break;
+-        }
+-    }
+-
+-     // 入力代行?E追加料??
+-     if (inputAssistance) {
+-        selfPrice += 1500;
+-    }
+-
+-    // 吁E?Eランの価格計?E
+-    // サクチE??プランの計?E
+-    let sakuttoPrice = selfPrice + 1480;
+-    
+-    // のん?Eりおまかせプランの計?E
+-    let omakasePrice = selfPrice;
+-    switch(discount) {
+-        case '趁E??割':
+-            omakasePrice += quantity * 100;
+-            break;
+-        case '通常料??':
+-        case '早割':
+-            omakasePrice += quantity * 200;
+-            break;
+-    }
+-    
+-    // まるっとおまかせプランの計?E
+-    let marunagePrice = omakasePrice + 1960;
+-
+-    if(quantity == null || quantity == 0){
+-        selfPrice = 0;
+-        sakuttoPrice = 0;
+-        omakasePrice = 0;
+-        marunagePrice = 0;
+-    }
+-    document.getElementById('yukkuri-plan-price').textContent = \;
+-    document.getElementById('self-plan-price').textContent = \;
+-    document.getElementById('omakase-plan-price').textContent = \;
+-    document.getElementById('marunage-plan-price').textContent = \;
+-}
++function calculatePrice() {
++    const quantity = parseInt(document.getElementById('quantity').value) || 0;
++
++    const gradeRaw = document.getElementById('grade').value;
++    const finishRaw = document.getElementById('finish').value;
++    const discountRaw = document.getElementById('discount').value;
++    const bringYourOwn = document.getElementById('bring-your-own').checked;
++    const dmCouponChecked = document.getElementById('dm-option').checked;
++    const inputAssistance = document.getElementById('input-assistance').checked;
++
++    const grade = normalizeGrade(gradeRaw);
++    const finish = normalizeFinish(finishRaw);
++    const discount = normalizeDiscount(discountRaw);
++
++    let selfPrice = calculateBasePrice(grade, finish, quantity);
++
++    // 割引
++    const discountRate = PRICING.discounts[discount] || 0;
++    if (discountRate > 0) {
++        selfPrice = Math.floor(selfPrice * (1 - discountRate));
++    }
++
++    // はがき代
++    if (!bringYourOwn) {
++        selfPrice += quantity * PRICING.postcard.perUnit;
++    }
++
++    // DMクーポン
++    if (dmCouponChecked) {
++        const dm = PRICING.dmCoupon[discount] || 0;
++        selfPrice -= dm;
++    }
++
++    // 入力代行
++    if (inputAssistance) {
++        selfPrice += PRICING.inputAssistanceFee;
++    }
++
++    // 各プラン
++    let sakuttoPrice = selfPrice + PRICING.plans.sakutto.addFixed;
++
++    let omakasePrice = selfPrice;
++    const perUnit = PRICING.plans.omakase.perUnitByDiscount[discount] || 0;
++    omakasePrice += quantity * perUnit;
++
++    let marunagePrice = omakasePrice + PRICING.plans.marunageExtra;
++
++    if (!quantity) {
++        selfPrice = 0;
++        sakuttoPrice = 0;
++        omakasePrice = 0;
++        marunagePrice = 0;
++    }
++
++    const yPriceEl = document.getElementById('yukkuri-plan-price');
++    const sPriceEl = document.getElementById('self-plan-price');
++    const oPriceEl = document.getElementById('omakase-plan-price');
++    const mPriceEl = document.getElementById('marunage-plan-price');
++    if (yPriceEl) yPriceEl.textContent = \;
++    if (sPriceEl) sPriceEl.textContent = \;
++    if (oPriceEl) oPriceEl.textContent = \;
++    if (mPriceEl) mPriceEl.textContent = \;
++}
+@@
+-function calculateBasePrice(grade, finish, quantity) {
+-    console.debug("Start calculateBasePrice()");
+-    let basePrice;
+-    let additionalPrice;
+-
+-    if (finish === '写真仕上げ') {
+-        switch(grade) {
+-            case '自?E??チE??イン':
+-                basePrice = 2200;
+-                break;
+-            case 'ライチE:
+-                basePrice = 2800;
+-                break;
+-            case 'プレミアム':
+-                basePrice = 4800;
+-                break;
+-            case 'ハイグレーチE:
+-                basePrice = 5400;
+-                break;
+-            case 'スタンダーチE:
+-                basePrice = 3800;
+-                break;
+-        }
+-        additionalPrice = Math.max(0, Math.ceil((quantity - 10) / 10)) * 660;
+-    } else {
+-        switch(grade) {
+-            case '自?E??チE??イン':
+-                basePrice = 2000;
+-                break;
+-            case 'ライチE:
+-                basePrice = 2600;
+-                break;
+-            case 'プレミアム':
+-                basePrice = 4600;
+-                break;
+-            case 'ハイグレーチE:
+-                basePrice = 5200;
+-                break;
+-            case 'スタンダーチE:
+-                basePrice = 3600;
+-                break;
+-        }
+-        if (quantity <= 10) {
+-            additionalPrice = 0;
+-        } else if (quantity <= 50) {
+-            additionalPrice = Math.ceil((quantity - 10) / 10) * 600;
+-        } else if (quantity <= 100) {
+-            additionalPrice = 4 * 600 + Math.ceil((quantity - 50) / 10) * 550;
+-        } else {
+-            additionalPrice = 4 * 600 + 5 * 550 + Math.ceil((quantity - 100) / 10) * 500;
+-        }
+-    }
+-    console.debug("End calculateBasePrice()");
+-    return basePrice + additionalPrice;
+-}
++function calculateBasePrice(grade, finish, quantity) {
++    const finishCfg = PRICING.finishes[finish] || PRICING.finishes.print;
++    const base = finishCfg.base[grade] ?? finishCfg.base.standard;
++    const step = finishCfg.stepSize;
++    const free = finishCfg.initialFreeQty;
++    const incs = finishCfg.increments;
++
++    let additional = 0;
++    if (quantity > free) {
++        let remain = quantity - free;
++        // 何ステップ分か（切り上げ）
++        const stepsNeeded = Math.ceil(remain / step);
++        // 区間ごとの単価で積み上げ
++        let processed = 0;
++        let accumulated = 0;
++        for (const band of incs) {
++            // このバンド内で必要な枚数（free以降分）
++            const bandLimit = Math.max(0, Math.min(band.upto - free, quantity - free));
++            const bandQty = Math.max(0, bandLimit - processed);
++            const bandSteps = Math.ceil(Math.max(0, bandQty) / step) - Math.ceil(Math.max(0, 0) / step);
++            const usableSteps = Math.max(0, Math.min(stepsNeeded - Math.ceil(processed / step), bandSteps));
++            accumulated += usableSteps * band.perStep;
++            processed += bandQty;
++            if (Math.ceil(processed / step) >= stepsNeeded) break;
++        }
++        // 単一バンド（写真仕上げなど）の場合は単純計算
++        if (incs.length === 1) {
++            additional = stepsNeeded * incs[0].perStep;
++        } else {
++            // 安全側：もし上の区間計算が0ならフォールバックで段階式を算出
++            additional = accumulated || (function() {
++                let remainSteps = stepsNeeded;
++                let added = 0;
++                let coveredUpto = free;
++                for (const band of incs) {
++                    if (remainSteps <= 0) break;
++                    const bandMaxSteps = band.upto === Infinity ? remainSteps : Math.max(0, Math.ceil((band.upto - coveredUpto) / step));
++                    const use = Math.min(remainSteps, bandMaxSteps);
++                    added += use * band.perStep;
++                    remainSteps -= use;
++                    coveredUpto = band.upto;
++                }
++                return added;
++            })();
++        }
++    }
++    return base + additional;
++}
+@@
+-// ファイルの最後に以下?Eコードを追加してください
+-document.addEventListener('DOMContentLoaded', function() {
+-    updateVisiblePlans();
+-    document.getElementById('finish').addEventListener('change', updateVisiblePlans);
+-});
++// 初期化
++document.addEventListener('DOMContentLoaded', function() {
++    updateVisiblePlans();
++    const finishEl = document.getElementById('finish');
++    if (finishEl) finishEl.addEventListener('change', updateVisiblePlans);
++});
+@@
+-                const dmCoupon = document.getElementById('dm-option').checked;
+-                const discount = document.getElementById('discount').value;
+-                let dmDiscount = 0;
+-
+-                if (dmCoupon) {
+-                    switch(discount) {
+-                        case '趁E??割':
+-                        case '早割':
+-                            dmDiscount = 500;
+-                            break;
+-                        case '通常料??':
+-                            dmDiscount = 300;
+-                            break;
+-                    }
+-                }
++                const dmCoupon = document.getElementById('dm-option').checked;
++                const discountRaw = document.getElementById('discount').value;
++                const discount = normalizeDiscount(discountRaw);
++                let dmDiscount = 0;
++                if (dmCoupon) {
++                    dmDiscount = PRICING.dmCoupon[discount] || 0;
++                }
+*** End Patch
