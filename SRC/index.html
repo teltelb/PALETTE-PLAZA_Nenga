@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>年賀状 見積（GitHub Pages 版 / Step1+合計グリッド）</title>
+    <!-- TailwindCSS CDN: ビルド不要でGitHub Pages向け -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            boxShadow: {
+              soft: "0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06)",
+            },
+            borderRadius: {
+              '2xl': '1rem'
+            }
+          },
+        },
+      };
+    </script>
+    <style>
+      .thin-scroll::-webkit-scrollbar { height: 8px; }
+      .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+      .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+    </style>
+  </head>
+  <body class="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
+    <main class="mx-auto max-w-[1024px] px-5 py-8">
+      <section class="rounded-2xl border border-slate-200 bg-white/70 shadow-soft backdrop-blur">
+        <header class="flex items-center justify-between gap-4 border-b border-slate-100 p-5">
+          <h1 class="text-xl font-semibold tracking-tight">年賀状 料金入力（GitHub Pages版）</h1>
+          <span class="text-sm text-slate-500">Step 1 / デザイン + 合計グリッド</span>
+        </header>
+
+        <div class="p-5">
+          <!-- 1行目 -->
+          <div class="grid grid-cols-12 gap-4">
+            <!-- 絵柄 -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-4">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">絵柄</label>
+              <select id="artwork" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-400 focus:shadow-sm">
+                <option value="">選択してください</option>
+                <option>A1</option>
+                <option>A2</option>
+                <option>ST</option>
+                <option>KP</option>
+                <option>NY</option>
+                <option>JP</option>
+              </select>
+              <p class="mt-1 text-xs text-slate-400">アルファベット2〜3文字</p>
+            </div>
+
+            <!-- 仕上がり -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-4">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">仕上がり</label>
+              <select id="finish" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-400 focus:shadow-sm">
+                <option value="">選択してください</option>
+                <option value="print">印刷仕上げ</option>
+                <option value="photo">写真キレイ仕上げ</option>
+              </select>
+            </div>
+
+            <!-- はがき種 -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-4">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">はがき種</label>
+              <select id="cardType" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-400 focus:shadow-sm">
+                <option value="">選択してください</option>
+                <option>お年玉付き年賀はがき</option>
+                <option>通常郵便はがき</option>
+                <option>私製はがき</option>
+                <option>喪中用私製はがき</option>
+                <option>私製はがき（年賀印つき)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 2行目 -->
+          <div class="mt-4 grid grid-cols-12 gap-4">
+            <!-- 注文枚数 -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-3">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">注文枚数</label>
+              <div class="relative">
+                <input id="orderQty" inputmode="numeric" placeholder="例: 30" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 outline-none focus:border-slate-400 focus:shadow-sm" />
+                <span class="pointer-events-none absolute inset-y-0 right-3 my-auto inline-flex h-[22px] items-center text-sm text-slate-500">枚</span>
+              </div>
+            </div>
+
+            <!-- 持込はがき -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-3">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">持込はがき</label>
+              <div class="relative">
+                <input id="bringInQty" inputmode="numeric" placeholder="例: 10" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 outline-none focus:border-slate-400 focus:shadow-sm" />
+                <span class="pointer-events-none absolute inset-y-0 right-3 my-auto inline-flex h-[22px] items-center text-sm text-slate-500">枚</span>
+              </div>
+            </div>
+
+            <!-- クーポン -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-3">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">クーポン</label>
+              <select id="coupon" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-400 focus:shadow-sm">
+                <option value="">選択してください</option>
+                <option>500</option>
+                <option>300</option>
+                <option>200</option>
+                <option>100</option>
+              </select>
+            </div>
+
+            <!-- 割引（クーポンの右） -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-3">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">割引</label>
+              <div class="flex flex-wrap items-center gap-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <label class="inline-flex items-center gap-2 select-none">
+                  <input id="superEarly" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                  <span class="text-[15px]">超早割</span>
+                </label>
+                <label class="inline-flex items-center gap-2 select-none">
+                  <input id="early" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                  <span class="text-[15px]">早割</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 宛名行（注文枚数の行の下） -->
+          <div class="mt-3 grid grid-cols-12 gap-4">
+            <!-- 宛名印刷（データ） -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-4">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">宛名印刷（データ）</label>
+              <div class="relative">
+                <input id="addrDataCount" inputmode="numeric" placeholder="例: 20" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 outline-none focus:border-slate-400 focus:shadow-sm" />
+                <span class="pointer-events-none absolute inset-y-0 right-3 my-auto inline-flex h-[22px] items-center text-sm text-slate-500">枚</span>
+              </div>
+            </div>
+
+            <!-- 宛名印刷（紙媒体） -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-4">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">宛名印刷（紙媒体）</label>
+              <div class="relative">
+                <input id="addrPaperCount" inputmode="numeric" placeholder="例: 15" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 outline-none focus:border-slate-400 focus:shadow-sm" />
+                <span class="pointer-events-none absolute inset-y-0 right-3 my-auto inline-flex h-[22px] items-center text-sm text-slate-500">枚</span>
+              </div>
+            </div>
+
+            <!-- 宛名修正 -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-4">
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">宛名修正</label>
+              <div class="relative">
+                <input id="addrFixCount" inputmode="numeric" placeholder="例: 5" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 outline-none focus:border-slate-400 focus:shadow-sm" />
+                <span class="pointer-events-none absolute inset-y-0 right-3 my-auto inline-flex h-[22px] items-center text-sm text-slate-500">枚</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3行目：オプション枠（横一列） -->
+          <div class="mt-6 rounded-2xl border border-slate-200 bg-white/60 p-4">
+            <div class="mb-2 text-[15px] font-semibold tracking-wide text-slate-700">オプション</div>
+            <div class="flex items-center gap-3 overflow-x-auto whitespace-nowrap thin-scroll">
+              <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
+                <input id="optOmakaseInput" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                <span class="text-[15px]">おまかせ入力</span>
+              </label>
+              <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
+                <input id="optCommentOnly" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                <span class="text-[15px]">コメントのみおまかせ</span>
+              </label>
+              <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
+                <input id="optLogo" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                <span class="text-[15px]">ロゴ入れ</span>
+              </label>
+              <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
+                <input id="optPlaceholder" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                <span class="text-[15px]">〇〇〇〇</span>
+              </label>
+            </div>
+
+            <!-- 計算ボタン -->
+            <div class="mt-4 flex justify-end">
+              <button id="btnCalc" type="button" class="inline-flex items-center justify-center rounded-xl bg-slate-800 px-4 py-2 text-white shadow-sm transition hover:bg-slate-700">
+                計算する
+              </button>
+            </div>
+
+            <!-- エラー表示 -->
+            <div id="error" class="mt-4 hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"></div>
+          </div>
+
+          <!-- 合計グリッド（2行6列） -->
+          <div id="result" class="mt-6 hidden rounded-2xl border border-slate-200 bg-white/70 p-4">
+            <div class="mb-2 text-[15px] font-semibold tracking-wide text-slate-700">合計（暫定）</div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full border-collapse text-[15px]">
+                <thead>
+                  <tr id="dueHead" class="border-b border-slate-200"></tr>
+                </thead>
+                <tbody>
+                  <tr id="dueAmount" class="border-b border-slate-200"></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="mt-2 text-xs text-slate-500">
+              ※ いまは印刷料金・納期料金・宛名・オプションは未計上。はがき代 − クーポンの暫定合計です。納期別の加算はテーブル確定後に反映します。
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      <footer class="mx-auto mt-6 max-w-[1024px] px-1 text-center text-xs text-slate-500">
+        GitHub Pages 向けのスタンドアロンHTML。以後、価格テーブル連携・PDF出力を追加予定。
+      </footer>
+    </main>
+
+    <script>
+      // --- 入力サニタイズ（半角数字のみ） ---
+      const numOnly = (el) => el && el.addEventListener('input', () => el.value = (el.value || '').replace(/[^0-9]/g, ''));
+      numOnly(document.getElementById('orderQty'));
+      numOnly(document.getElementById('bringInQty'));
+      numOnly(document.getElementById('addrDataCount'));
+      numOnly(document.getElementById('addrPaperCount'));
+      numOnly(document.getElementById('addrFixCount'));
+
+      // --- はがき単価（仮値） ---
+      const CARD_UNIT_PRICE = {
+        "お年玉付き年賀はがき": 85,
+        "通常郵便はがき": 85,
+        "私製はがき": 0,
+        "喪中用私製はがき": 0,
+        "私製はがき（年賀印つき)": 0,
+      };
+
+      // --- ユーティリティ ---
+      const yen = (n) => (n || 0).toLocaleString('ja-JP');
+      const toInt = (s) => {
+        const v = parseInt(String(s || '').replace(/[^0-9]/g, ''), 10);
+        return Number.isFinite(v) ? v : 0;
+      };
+      const addDays = (date, days) => {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+        return d;
+      };
+      const fmtMD = (date) => date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+
+      // --- 計算ボタン ---
+      document.getElementById('btnCalc').addEventListener('click', () => {
+        const err = document.getElementById('error');
+        err.classList.add('hidden');
+        err.textContent = '';
+
+        const state = {
+          artwork: document.getElementById('artwork').value,
+          finish: document.getElementById('finish').value,
+          cardType: document.getElementById('cardType').value,
+          orderQty: toInt(document.getElementById('orderQty').value),
+          bringInQty: toInt(document.getElementById('bringInQty').value),
+          coupon: toInt(document.getElementById('coupon').value),
+          superEarly: document.getElementById('superEarly').checked,
+          early: document.getElementById('early').checked,
+          addrDataCount: toInt(document.getElementById('addrDataCount').value),
+          addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
+          addrFixCount: toInt(document.getElementById('addrFixCount').value),
+          optOmakaseInput: document.getElementById('optOmakaseInput').checked,
+          optCommentOnly: document.getElementById('optCommentOnly').checked,
+          optLogo: document.getElementById('optLogo').checked,
+          optPlaceholder: document.getElementById('optPlaceholder').checked,
+        };
+
+        if (state.orderQty <= 0) {
+          err.textContent = "注文枚数を入力してください。";
+          err.classList.remove('hidden');
+          document.getElementById('result').classList.add('hidden');
+          return;
+        }
+        if (state.bringInQty > state.orderQty) {
+          err.textContent = "持込はがきは、注文枚数以下にしてください。";
+          err.classList.remove('hidden');
+          document.getElementById('result').classList.add('hidden');
+          return;
+        }
+
+        const requiredBuy = Math.max(state.orderQty - state.bringInQty, 0);
+        const cardUnit = CARD_UNIT_PRICE[state.cardType] ?? 0;
+        const cardCost = requiredBuy * cardUnit;
+
+        // 暫定合計: はがき代 - クーポン。将来ここに印刷/納期/宛名/オプションを加算
+        const subtotal = Math.max(0, 0 - state.coupon);
+        const total = subtotal + cardCost;
+
+        // 2行6列のグリッド生成
+        const labels = [
+          { name: "当日仕上げ", offset: 0 },
+          { name: "翌日仕上げ", offset: 1 },
+          { name: "2日後仕上げ", offset: 2 },
+          { name: "3日後仕上げ", offset: 3 },
+          { name: "4日後仕上げ", offset: 4 },
+          { name: "5日後仕上げ", offset: 5 },
+        ];
+        const today = new Date();
+        const head = document.getElementById('dueHead');
+        const amt = document.getElementById('dueAmount');
+        head.innerHTML = "";
+        amt.innerHTML = "";
+
+        labels.forEach(l => {
+          const d = addDays(today, l.offset);
+          const th = document.createElement('th');
+          th.className = "px-3 py-2 text-center align-bottom";
+          th.innerHTML = `<div class="text-[14px] font-medium text-slate-700">${l.name}</div>
+                          <div class="mt-0.5 text-xs text-slate-500">${fmtMD(d)}</div>`;
+          head.appendChild(th);
+
+          const td = document.createElement('td');
+          td.className = "px-3 py-3 text-center text-[16px] font-semibold";
+          td.textContent = `${yen(total)} 円`;
+          amt.appendChild(td);
+        });
+
+        document.getElementById('result').classList.remove('hidden');
+      });
+
+      // 外部から状態を取得したいときのヘルパ
+      window.getFormState = () => ({
+        artwork: document.getElementById('artwork').value,
+        finish: document.getElementById('finish').value,
+        cardType: document.getElementById('cardType').value,
+        orderQty: document.getElementById('orderQty').value,
+        bringInQty: document.getElementById('bringInQty').value,
+        coupon: document.getElementById('coupon').value,
+        superEarly: document.getElementById('superEarly').checked,
+        early: document.getElementById('early').checked,
+        addrDataCount: document.getElementById('addrDataCount').value,
+        addrPaperCount: document.getElementById('addrPaperCount').value,
+        addrFixCount: document.getElementById('addrFixCount').value,
+        optOmakaseInput: document.getElementById('optOmakaseInput').checked,
+        optCommentOnly: document.getElementById('optCommentOnly').checked,
+        optLogo: document.getElementById('optLogo').checked,
+        optPlaceholder: document.getElementById('optPlaceholder').checked,
+      });
+    </script>
+  </body>
+</html>
