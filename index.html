@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>年賀状 見積（GitHub Pages 版 / フル計算対応）</title>
+    <title>パレットプラザ　年賀状 見積</title>
     <!-- TailwindCSS CDN: ビルド不要でGitHub Pages向け -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -30,10 +30,6 @@
   <body class="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
     <main class="mx-auto max-w-[1024px] px-5 py-8">
       <section class="rounded-2xl border border-slate-200 bg-white/70 shadow-soft backdrop-blur">
-        <header class="flex items-center justify-between gap-4 border-b border-slate-100 p-5">
-          <h1 class="text-xl font-semibold tracking-tight">年賀状 料金入力（GitHub Pages版）</h1>
-          <span class="text-sm text-slate-500">フル計算（印刷代/はがき/宛名/各オプション/クーポン/納期加算）</span>
-        </header>
 
         <div class="p-5">
           <!-- 1行目 -->
@@ -52,9 +48,8 @@
                 <!-- ライト★ -->
                 <option>PLT</option>
                 <!-- MYデザイン -->
-                <option>MY</option>
+                <option>MYデザイン</option>
               </select>
-              <p class="mt-1 text-xs text-slate-400">2〜3文字コード（例：PHG, PPR, PSD, PLT, MY）</p>
             </div>
 
             <!-- 仕上がり -->
@@ -165,28 +160,27 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optOmakaseOrder" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">おまかせ注文（1,500円）</span>
+                <span class="text-[15px]">おまかせ注文</span>
               </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optCommentOnly" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">コメントのみおまかせ（1,000円）</span>
+                <span class="text-[15px]">コメントのみおまかせ</span>
               </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optLogo" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">ロゴ入れ（1,200円）</span>
+                <span class="text-[15px]">ロゴ入れ</span>
               </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optProof" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">校正サービス（1,200円）</span>
+                <span class="text-[15px]">校正サービス</span>
               </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optLogoCut" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">ロゴ切り抜き（1,200円）</span>
+                <span class="text-[15px]">ロゴ切り抜き</span>
               </label>
               <div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                 <label for="optScanCount" class="text-[15px]">スキャンサービス</label>
                 <input id="optScanCount" inputmode="numeric" placeholder="枚数" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 outline-none focus:border-slate-400" />
-                <span class="text-sm text-slate-500">（600円/枚）</span>
               </div>
             </div>
 
@@ -246,10 +240,6 @@
           </div>
         </div>
       </section>
-
-      <footer class="mx-auto mt-6 max-w-[1024px] px-1 text-center text-xs text-slate-500">
-        GitHub Pages 用の単一HTMLです。仕様変更はJSのテーブルを書き換えるだけで反映されます。
-      </footer>
     </main>
 
     <script>
