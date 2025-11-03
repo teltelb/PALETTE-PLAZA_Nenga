@@ -3,36 +3,36 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>年賀状 見積（GitHub Pages 版 / フル計算対応）</title>
-    <!-- TailwindCSS CDN: ビルド不要でGitHub Pages向け -->
+    <title>パレットプラザ 年賀状 見積（バーコード対応）</title>
+    <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JsBarcode for EAN-8 / CODE128 -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
-            boxShadow: {
-              soft: "0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06)",
-            },
-            borderRadius: {
-              '2xl': '1rem'
-            }
+            boxShadow: { soft: "0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06)" },
+            borderRadius: { '2xl': '1rem' }
           },
         },
       };
     </script>
     <style>
-      .thin-scroll::-webkit-scrollbar { height: 8px; }
-      .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-      .thin-scroll::-webkit-scrollbar-track { background: transparent; }
       .pill { display:inline-flex; align-items:center; gap:.5rem; border-radius:9999px; background:#f1f5f9; padding:.25rem .75rem; font-size:12px; color:#475569; }
+      .bc-box { display:inline-flex; align-items:center; justify-content:center; padding:.25rem .5rem; border-radius:.5rem; background:#fff; border:1px solid #e2e8f0; }
+      dialog { border:none; }
     </style>
   </head>
   <body class="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
     <main class="mx-auto max-w-[1024px] px-5 py-8">
       <section class="rounded-2xl border border-slate-200 bg-white/70 shadow-soft backdrop-blur">
-        <header class="flex items-center justify-between gap-4 border-b border-slate-100 p-5">
-          <h1 class="text-xl font-semibold tracking-tight">年賀状 料金入力（GitHub Pages版）</h1>
-          <span class="text-sm text-slate-500">フル計算（印刷代/はがき/宛名/各オプション/クーポン/納期加算）</span>
+        <header class="flex items-center justify-between gap-3 border-b border-slate-100 p-5">
+          <h1 class="text-xl font-semibold tracking-tight">年賀状 見積（バーコード対応）</h1>
+          <div class="flex items-center gap-2">
+            <button id="btnBarcodeCfg" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50">⚙️ バーコード設定</button>
+            <button id="btnBarcodeBulk" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[13px] text-slate-700 hover:bg-slate-50">📄 ページ貼付で登録</button>
+          </div>
         </header>
 
         <div class="p-5">
@@ -51,10 +51,9 @@
                 <option>PSD</option><option>BO</option>
                 <!-- ライト★ -->
                 <option>PLT</option>
-                <!-- MYデザイン -->
-                <option>MY</option>
+                <!-- MYデザイン（値はMY） -->
+                <option value="MY">MYデザイン</option>
               </select>
-              <p class="mt-1 text-xs text-slate-400">2〜3文字コード（例：PHG, PPR, PSD, PLT, MY）</p>
             </div>
 
             <!-- 仕上がり -->
@@ -159,39 +158,39 @@
             </div>
           </div>
 
-          <!-- 3行目：オプション枠（横一列 → 折返しグリッド） -->
+          <!-- 3行目：オプション枠 -->
           <div class="mt-6 rounded-2xl border border-slate-200 bg-white/60 p-4">
             <div class="mb-2 text-[15px] font-semibold tracking-wide text-slate-700">オプション</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optOmakaseOrder" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">おまかせ注文（1,500円）</span>
+                <span class="text-[15px]">おまかせ注文</span>
               </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optCommentOnly" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">コメントのみおまかせ（1,000円）</span>
+                <span class="text-[15px]">コメントのみおまかせ</span>
               </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optLogo" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">ロゴ入れ（1,200円）</span>
+                <span class="text-[15px]">ロゴ入れ</span>
               </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optProof" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">校正サービス（1,200円）</span>
+                <span class="text-[15px]">校正サービス</span>
               </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optLogoCut" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">ロゴ切り抜き（1,200円）</span>
+                <span class="text-[15px]">ロゴ切り抜き</span>
               </label>
               <div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                 <label for="optScanCount" class="text-[15px]">スキャンサービス</label>
                 <input id="optScanCount" inputmode="numeric" placeholder="枚数" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 outline-none focus:border-slate-400" />
-                <span class="text-sm text-slate-500">（600円/枚）</span>
               </div>
             </div>
 
             <!-- 計算ボタン -->
-            <div class="mt-4 flex justify-end">
+            <div class="mt-4 flex items-center justify-between">
+              <div class="text-xs text-slate-500">※計算後、上段の「当日〜5日後」のセルをクリックすると、下部に「料金明細表」とバーコードが表示されます。</div>
               <button id="btnCalc" type="button" class="inline-flex items-center justify-center rounded-xl bg-slate-800 px-4 py-2 text-white shadow-sm transition hover:bg-slate-700">
                 計算する
               </button>
@@ -248,16 +247,99 @@
       </section>
 
       <footer class="mx-auto mt-6 max-w-[1024px] px-1 text-center text-xs text-slate-500">
-        GitHub Pages 用の単一HTMLです。仕様変更はJSのテーブルを書き換えるだけで反映されます。
+        単一HTML。バーコードはこのページ内モーダルからローカル保存（localStorage）で管理します。
       </footer>
     </main>
 
+    <!-- バーコード設定（個別：納期/宛名/OP/クーポン） -->
+    <dialog id="dlgBarcode">
+      <form method="dialog" class="w-[min(92vw,760px)] rounded-2xl border border-slate-200 bg-white">
+        <div class="flex items-center justify-between border-b border-slate-100 p-4">
+          <h2 class="text-base font-semibold">バーコード設定（個別）</h2>
+          <button class="rounded-md px-2 py-1 text-sm text-slate-600 hover:bg-slate-100">✕</button>
+        </div>
+        <div class="p-4 space-y-3">
+          <p class="text-sm text-slate-600">キー → 8桁 EAN-8 をJSONで保存します。印刷（数量帯）は下の「ページ貼付で登録」を使ってください。</p>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs">
+            <p class="mb-1 font-semibold">キー例</p>
+            <ul class="list-disc pl-5 space-y-1">
+              <li><code>DUE|当日仕上げ</code>, <code>DUE|翌日仕上げ</code> … 納期加算</li>
+              <li><code>ADDR|DATA</code>, <code>ADDR|PAPER</code>, <code>ADDR|FIX</code> … 宛名</li>
+              <li><code>OP|OMAKASE</code>, <code>OP|COMMENT</code>, <code>OP|LOGO</code>, <code>OP|PROOF</code>, <code>OP|LOGOCUT</code>, <code>OP|SCAN</code></li>
+              <li><code>COUPON|500</code>, <code>COUPON|400</code>, <code>COUPON|300</code>, <code>COUPON|200</code></li>
+            </ul>
+          </div>
+          <textarea id="barcodeJson" rows="12" class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs" spellcheck="false"></textarea>
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-slate-500">※8桁はEAN-8チェックを検証します（不一致は保存不可）。</div>
+            <div class="flex items-center gap-2">
+              <button id="btnBarcodeReset" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50">初期化</button>
+              <button id="btnBarcodeSave" type="button" class="rounded-lg bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">保存</button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- バーコード：ページ貼付で登録（印刷：数量帯配列 10..200,201+） -->
+    <dialog id="dlgBulk">
+      <form method="dialog" class="w-[min(96vw,880px)] rounded-2xl border border-slate-200 bg-white">
+        <div class="flex items-center justify-between border-b border-slate-100 p-4">
+          <h2 class="text-base font-semibold">バーコード登録（PDFページの8桁を貼付）</h2>
+          <button class="rounded-md px-2 py-1 text-sm text-slate-600 hover:bg-slate-100">✕</button>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">仕上がり</label>
+              <select id="bulkFinish" class="w-full rounded-lg border border-slate-300 px-2 py-1.5">
+                <option value="print">印刷仕上げ</option>
+                <option value="photo">写真キレイ仕上げ</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">グレード</label>
+              <select id="bulkGrade" class="w-full rounded-lg border border-slate-300 px-2 py-1.5">
+                <option value="MY">MY</option>
+                <option value="LIGHT">LIGHT</option>
+                <option value="STANDARD">STANDARD</option>
+                <option value="PREMIUM">PREMIUM</option>
+                <option value="HIGH">HIGH</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-600 mb-1">割引</label>
+              <select id="bulkDisc" class="w-full rounded-lg border border-slate-300 px-2 py-1.5">
+                <option value="NONE">なし（定価）</option>
+                <option value="EARLY">早割（×0.9反映）</option>
+                <option value="SUPER">超早割（×0.8反映）</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="btnBulkSample" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50 w-full">貼付け例を入れる</button>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500">PDFに並ぶ「8桁」だけをコピペ。22個なら先頭の「1枚」を自動スキップして 10〜200, 201+ の 21帯に割当てます。</p>
+          <textarea id="bulkText" rows="10" class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs" placeholder="例）
+68208202 68208301 68208400 68208509 …"></textarea>
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-slate-500">保存先キー：<code id="bulkKeyPreview" class="text-amber-700"></code></div>
+            <div class="flex items-center gap-2">
+              <button id="btnBulkParse" type="button" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50">検証</button>
+              <button id="btnBulkSave" type="button" class="rounded-lg bg-slate-800 px-3 py-1.5 text-sm text-white hover:bg-slate-700">保存</button>
+            </div>
+          </div>
+          <div id="bulkPreview" class="hidden mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs"></div>
+        </div>
+      </form>
+    </dialog>
+
     <script>
-      // --- 入力サニタイズ（半角数字のみ） ---
+      // ====== 入力サニタイズ ======
       const numOnly = (el) => el && el.addEventListener('input', () => el.value = (el.value || '').replace(/[^0-9]/g, ''));
       ['orderQty','bringInQty','addrDataCount','addrPaperCount','addrFixCount','optScanCount'].forEach(id => numOnly(document.getElementById(id)));
 
-      // --- はがき単価 ---
+      // ====== 単価定義 ======
       const CARD_UNIT_PRICE = {
         "お年玉付き年賀はがき": 85,
         "通常郵便はがき": 85,
@@ -266,18 +348,17 @@
         "私製はがき(年賀印つき)": 0,
       };
 
-      // --- 絵柄コード→グレード ---
+      // 絵柄 → グレード
       const CODE_TO_GRADE = (() => {
         const map = {};
-        ['PHG','DN','ZN','RN','UN','SN','LN'].forEach(c => map[c] = 'HIGH');     // ハイグレード★★★★
-        ['PPR','DO','ZO','UO','BN'].forEach(c => map[c] = 'PREMIUM');            // プレミアム★★★
-        ['PSD','BO'].forEach(c => map[c] = 'STANDARD');                           // スタンダード★★
-        ['PLT'].forEach(c => map[c] = 'LIGHT');                                   // ライト★
-        ['MY'].forEach(c => map[c] = 'MY');                                       // MYデザイン
+        ['PHG','DN','ZN','RN','UN','SN','LN'].forEach(c => map[c] = 'HIGH');
+        ['PPR','DO','ZO','UO','BN'].forEach(c => map[c] = 'PREMIUM');
+        ['PSD','BO'].forEach(c => map[c] = 'STANDARD');
+        ['PLT'].forEach(c => map[c] = 'LIGHT');
+        ['MY'].forEach(c => map[c] = 'MY');
         return map;
       })();
 
-      // --- 印刷代 基本10枚価格 ---
       const BASE10_PRICE = {
         HIGH:     { print: 5500, photo: 5700 },
         PREMIUM:  { print: 5000, photo: 5200 },
@@ -285,13 +366,9 @@
         LIGHT:    { print: 3500, photo: 3700 },
         MY:       { print: 2500, photo: 2700 },
       };
-
-      // --- 仕上がり別の加算 ---
-      const STEP_PRINT = { first50: 650, next50: 600, over100: 550 }; // 印刷仕上げ
-      const STEP_PHOTO = 660; // 写真キレイ仕上げ（10枚ごと一定）
-
-      // --- 納期加算 ---
-      const DUE_ADD = [1480, 1180, 880, 580, 300, 0]; // 当日〜5日後
+      const STEP_PRINT = { first50: 650, next50: 600, over100: 550 };
+      const STEP_PHOTO = 660;
+      const DUE_ADD = [1480, 1180, 880, 580, 300, 0];
       const DUE_LABELS = [
         { name: "当日仕上げ", offset: 0 },
         { name: "翌日仕上げ", offset: 1 },
@@ -300,85 +377,104 @@
         { name: "4日後仕上げ", offset: 4 },
         { name: "5日後仕上げ", offset: 5 },
       ];
-
-      // --- 宛名/オプション 単価 ---
       const UNIT = {
-        addrData: 80,
-        addrPaper: 200,
-        addrFix: 50,
-        scan: 600,
-        omakase: 1500,
-        commentOnly: 1000,
-        logo: 1200,
-        proof: 1200,
-        logoCut: 1200,
+        addrData: 80, addrPaper: 200, addrFix: 50, scan: 600,
+        omakase: 1500, commentOnly: 1000, logo: 1200, proof: 1200, logoCut: 1200,
       };
 
-      // --- util ---
-      const yen = (n) => (Math.round(n || 0)).toLocaleString('ja-JP');
-      const toInt = (s) => {
-        const v = parseInt(String(s || '').replace(/[^0-9]/g, ''), 10);
-        return Number.isFinite(v) ? v : 0;
-      };
+      const BANDS = ["10","20","30","40","50","60","70","80","90","100","110","120","130","140","150","160","170","180","190","200","201+"];
+      const LS_KEY_SINGLE = 'barcode.single.v1'; // 個別項目（納期/宛名/OP/クーポン）
+      const LS_KEY_BULK   = 'barcode.bulk.v1';   // 印刷（数量帯配列）
+
+      // ====== Utils ======
+      const yen = (n) => (Math.round(n||0)).toLocaleString('ja-JP');
+      const toInt = (s) => { const v = parseInt(String(s || '').replace(/[^0-9]/g, ''), 10); return Number.isFinite(v) ? v : 0; };
       const ceil10 = (n) => Math.max(10, Math.ceil((n || 0)/10) * 10);
       const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
       const fmtMD = (date) => date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
 
-      // --- 印刷代の計算 ---
+      // ====== EAN-8 判定／描画 ======
+      function isValidEAN8(code){
+        if(!/^\d{8}$/.test(code)) return false;
+        const d = code.split('').map(Number);
+        const sum = 3*(d[0]+d[2]+d[4]+d[6]) + (d[1]+d[3]+d[5]);
+        const chk = (10 - (sum % 10)) % 10;
+        return chk === d[7];
+      }
+      function renderBarcodeTo(el, value){
+        if(!el) return;
+        const text = String(value||'');
+        try{
+          if (/^\d{8}$/.test(text) && isValidEAN8(text)) {
+            JsBarcode(el, text, { format: 'EAN8', displayValue: true, font: 'monospace', fontSize: 12, width: 2, height: 40, margin: 0 });
+          } else {
+            JsBarcode(el, text, { format: 'CODE128', displayValue: true, font: 'monospace', fontSize: 12, width: 1.8, height: 40, margin: 0 });
+          }
+        } catch(e){
+          el.replaceWith(Object.assign(document.createElement('div'), { className: 'text-xs text-red-600', textContent: `生成失敗: ${text}` }));
+        }
+      }
+
+      // ====== 計算 ======
       function calcPrintPrice(code, finish, qtyRaw, isSuperEarly, isEarly) {
         const grade = CODE_TO_GRADE[code];
         if (!grade || !finish) return 0;
         const base = BASE10_PRICE[grade][finish];
-        const qty = ceil10(qtyRaw);           // 10枚単位に切り上げ
-        const blocks = Math.max(1, qty/10);   // 10枚=1ブロック
-
+        const qty = ceil10(qtyRaw);
+        const blocks = Math.max(1, qty/10);
         let price = base;
         if (blocks > 1) {
           if (finish === 'photo') {
             price += (blocks - 1) * STEP_PHOTO;
           } else {
-            // 印刷仕上げ: 20〜50まで650, 60〜100まで600, 110〜は550
             const b = blocks;
-            const c650 = Math.max(0, Math.min(b, 5) - 1);   // blocks 2..5 -> 4段階
-            const c600 = Math.max(0, Math.min(b, 10) - 5);  // blocks 6..10
-            const c550 = Math.max(0, b - 10);               // blocks 11..
+            const c650 = Math.max(0, Math.min(b, 5) - 1);
+            const c600 = Math.max(0, Math.min(b, 10) - 5);
+            const c550 = Math.max(0, b - 10);
             price += c650 * STEP_PRINT.first50 + c600 * STEP_PRINT.next50 + c550 * STEP_PRINT.over100;
           }
         }
-
-        // 割引（印刷代にのみ適用）。両方チェック時はよりお得な係数(0.8)を優先。
         const factor = isSuperEarly ? 0.8 : (isEarly ? 0.9 : 1.0);
         return Math.round(price * factor);
       }
-
-      // --- はがき代の計算 ---
       function calcCardCost(type, orderQty, bringInQty) {
         const unit = CARD_UNIT_PRICE[type] ?? 0;
         const required = Math.max(0, toInt(orderQty) - toInt(bringInQty));
         return required * unit;
       }
-
-      // --- 宛名/オプションの計算 ---
       function calcOptions(state) {
         const addr =
           state.addrDataCount * UNIT.addrData +
           state.addrPaperCount * UNIT.addrPaper +
           state.addrFixCount * UNIT.addrFix;
-
         const checks =
           (state.optOmakaseOrder ? UNIT.omakase : 0) +
           (state.optCommentOnly ? UNIT.commentOnly : 0) +
           (state.optLogo ? UNIT.logo : 0) +
           (state.optProof ? UNIT.proof : 0) +
           (state.optLogoCut ? UNIT.logoCut : 0);
-
         const scans = state.optScanCount * UNIT.scan;
-
         return { addr, checks, scans, optionsTotal: addr + checks + scans };
       }
 
-      // --- 明細テーブル描画 ---
+      // ====== バーコードDB ======
+      function loadSingleMap(){ try { return JSON.parse(localStorage.getItem(LS_KEY_SINGLE) || '{}'); } catch { return {}; } }
+      function saveSingleMap(obj){ localStorage.setItem(LS_KEY_SINGLE, JSON.stringify(obj || {})); }
+      function loadBulkMap(){ try { return JSON.parse(localStorage.getItem(LS_KEY_BULK) || '{}'); } catch { return {}; } }
+      function saveBulkMap(obj){ localStorage.setItem(LS_KEY_BULK, JSON.stringify(obj || {})); }
+
+      function discountKey(st){ return st.superEarly? 'SUPER' : (st.early? 'EARLY' : 'NONE'); }
+      function qtyToBand(qtyRaw){ const q = ceil10(qtyRaw); return q > 200 ? '201+' : String(q); }
+      function buildBulkKey(grade, finish, disc){ return `PRINT|${grade}|${finish}|${disc}`; }
+
+      // ====== 明細テーブル（バーコード描画付き） ======
       function renderInvoice(selectedIdx, state) {
+        const grade = CODE_TO_GRADE[state.artwork] || 'MY';
+        const disc = discountKey(state);
+        const bulkKey = buildBulkKey(grade, state.finish, disc);
+        const bulkMap = loadBulkMap();
+        const singleMap = loadSingleMap();
+
         const printPrice = calcPrintPrice(state.artwork, state.finish, state.orderQty, state.superEarly, state.early);
         const cardCost   = calcCardCost(state.cardType, state.orderQty, state.bringInQty);
         const opt        = calcOptions(state);
@@ -386,49 +482,68 @@
 
         const items = [];
         const finLabel = state.finish === 'photo' ? '写真キレイ仕上げ' : '印刷仕上げ';
-        items.push({ cat: '印刷', name: `${finLabel} / ${state.artwork || '-'}`, code: 'BC-PRINT', unit: printPrice, qty: 1, sum: printPrice });
-        items.push({ cat: '納期加算', name: DUE_LABELS[selectedIdx]?.name || '-', code: `BC-DUE-${selectedIdx}`, unit: dueAdd, qty: 1, sum: dueAdd });
 
-        if (state.addrDataCount > 0)  items.push({ cat: '宛名', name: '宛名印刷（データ）', code: 'BC-ADDR-D', unit: UNIT.addrData,  qty: state.addrDataCount, sum: UNIT.addrData  * state.addrDataCount });
-        if (state.addrPaperCount > 0) items.push({ cat: '宛名', name: '宛名印刷（紙媒体）', code: 'BC-ADDR-P', unit: UNIT.addrPaper, qty: state.addrPaperCount, sum: UNIT.addrPaper * state.addrPaperCount });
-        if (state.addrFixCount > 0)   items.push({ cat: '宛名', name: '宛名修正',           code: 'BC-ADDR-F', unit: UNIT.addrFix,   qty: state.addrFixCount,  sum: UNIT.addrFix   * state.addrFixCount  });
+        // 印刷のバーコード（数量帯）
+        const band = qtyToBand(state.orderQty);
+        const bulkEntry = bulkMap[bulkKey] || {};
+        const bulkCode = bulkEntry[band] || '';
+        const printBarcode = bulkCode ? bulkCode : `${bulkKey}|${band}`; // 未設定はキーをCODE128で
 
-        if (state.optOmakaseOrder) items.push({ cat: 'OP', name: 'おまかせ注文',     code: 'BC-OMAKASE', unit: UNIT.omakase,    qty: 1, sum: UNIT.omakase });
-        if (state.optCommentOnly)  items.push({ cat: 'OP', name: 'コメントのみおまかせ', code: 'BC-CMT',     unit: UNIT.commentOnly, qty: 1, sum: UNIT.commentOnly });
-        if (state.optLogo)         items.push({ cat: 'OP', name: 'ロゴ入れ',         code: 'BC-LOGO',    unit: UNIT.logo,       qty: 1, sum: UNIT.logo });
-        if (state.optProof)        items.push({ cat: 'OP', name: '校正サービス',     code: 'BC-PROOF',   unit: UNIT.proof,      qty: 1, sum: UNIT.proof });
-        if (state.optLogoCut)      items.push({ cat: 'OP', name: 'ロゴ切り抜き',     code: 'BC-LOGOCUT', unit: UNIT.logoCut,    qty: 1, sum: UNIT.logoCut });
-        if (state.optScanCount>0)  items.push({ cat: 'OP', name: 'スキャンサービス', code: 'BC-SCAN',    unit: UNIT.scan,       qty: state.optScanCount, sum: UNIT.scan * state.optScanCount });
+        items.push({ cat: '印刷', name: `${finLabel} / ${state.artwork || '-'}`, code: printBarcode, unit: printPrice, qty: 1, sum: printPrice });
 
-        if (state.coupon>0)        items.push({ cat: '値引', name: 'クーポン',      code: 'BC-COUPON',  unit: -state.coupon,   qty: 1, sum: -state.coupon });
+        // 納期加算
+        const dueName = DUE_LABELS[selectedIdx]?.name || '-';
+        const dueKey = `DUE|${dueName}`;
+        const dueCode = singleMap[dueKey] || dueKey;
+        items.push({ cat: '納期加算', name: dueName, code: dueCode, unit: dueAdd, qty: 1, sum: dueAdd });
 
+        // 宛名
+        if (state.addrDataCount > 0)  items.push({ cat: '宛名', name: '宛名印刷（データ）', code: (singleMap['ADDR|DATA']||'ADDR|DATA'), unit: UNIT.addrData,  qty: state.addrDataCount, sum: UNIT.addrData  * state.addrDataCount });
+        if (state.addrPaperCount > 0) items.push({ cat: '宛名', name: '宛名印刷（紙媒体）', code: (singleMap['ADDR|PAPER']||'ADDR|PAPER'), unit: UNIT.addrPaper, qty: state.addrPaperCount, sum: UNIT.addrPaper * state.addrPaperCount });
+        if (state.addrFixCount > 0)   items.push({ cat: '宛名', name: '宛名修正',           code: (singleMap['ADDR|FIX']||'ADDR|FIX'), unit: UNIT.addrFix,   qty: state.addrFixCount,  sum: UNIT.addrFix   * state.addrFixCount  });
+
+        // OP
+        if (state.optOmakaseOrder) items.push({ cat: 'OP', name: 'おまかせ注文',         code: (singleMap['OP|OMAKASE']||'OP|OMAKASE'), unit: UNIT.omakase,    qty: 1, sum: UNIT.omakase });
+        if (state.optCommentOnly)  items.push({ cat: 'OP', name: 'コメントのみおまかせ', code: (singleMap['OP|COMMENT']||'OP|COMMENT'), unit: UNIT.commentOnly, qty: 1, sum: UNIT.commentOnly });
+        if (state.optLogo)         items.push({ cat: 'OP', name: 'ロゴ入れ',             code: (singleMap['OP|LOGO']||'OP|LOGO'),       unit: UNIT.logo,       qty: 1, sum: UNIT.logo });
+        if (state.optProof)        items.push({ cat: 'OP', name: '校正サービス',         code: (singleMap['OP|PROOF']||'OP|PROOF'),     unit: UNIT.proof,      qty: 1, sum: UNIT.proof });
+        if (state.optLogoCut)      items.push({ cat: 'OP', name: 'ロゴ切り抜き',         code: (singleMap['OP|LOGOCUT']||'OP|LOGOCUT'), unit: UNIT.logoCut,    qty: 1, sum: UNIT.logoCut });
+        if (state.optScanCount>0)  items.push({ cat: 'OP', name: 'スキャンサービス',     code: (singleMap['OP|SCAN']||'OP|SCAN'),        unit: UNIT.scan,       qty: state.optScanCount, sum: UNIT.scan * state.optScanCount });
+
+        // クーポン（マイナス）
+        if (state.coupon>0)        items.push({ cat: '値引', name: 'クーポン',            code: (singleMap[`COUPON|${Math.abs(state.coupon)}`]||`COUPON|${Math.abs(state.coupon)}`), unit: -state.coupon, qty: 1, sum: -state.coupon });
+
+        // 描画
         const tbody = document.getElementById('invBody');
         tbody.innerHTML = '';
         items.forEach(it => {
           const tr = document.createElement('tr');
           tr.className = 'border-b border-slate-100';
+          const bcId = `bc_${Date.now()}_${Math.random().toString(36).slice(2)}`;
           tr.innerHTML = `
             <td class="px-3 py-2">${it.cat}</td>
             <td class="px-3 py-2">${it.name}</td>
-            <td class="px-3 py-2">${it.code}</td>
+            <td class="px-3 py-2">
+              <div class="bc-box"><svg id="${bcId}"></svg></div>
+              <div class="mt-1 text-[10px] text-slate-500">${String(it.code)}</div>
+            </td>
             <td class="px-3 py-2 text-right">¥${yen(it.unit)}</td>
             <td class="px-3 py-2 text-right">${it.qty}</td>
             <td class="px-3 py-2 text-right">¥${yen(it.sum)}</td>
           `;
           tbody.appendChild(tr);
+          renderBarcodeTo(document.getElementById(bcId), it.code);
         });
 
         const sumExcl = printPrice + opt.optionsTotal - state.coupon + dueAdd; // はがき代を除く
         document.getElementById('sumExclCard').textContent = `¥${yen(sumExcl)}`;
         document.getElementById('sumCardCost').textContent = `¥${yen(cardCost)}`;
 
-        const invoice = document.getElementById('invoice');
-        invoice.classList.remove('hidden');
-        // スクロールして見せる
-        invoice.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.getElementById('invoice').classList.remove('hidden');
+        document.getElementById('invoice').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
-      // --- 計算ボタン ---
+      // ====== 計算ボタン ======
       document.getElementById('btnCalc').addEventListener('click', () => {
         const err = document.getElementById('error');
         err.classList.add('hidden');
@@ -454,6 +569,12 @@
           optScanCount: toInt(document.getElementById('optScanCount').value),
         };
 
+        if (!state.finish) {
+          err.textContent = "仕上がりを選択してください。";
+          err.classList.remove('hidden');
+          document.getElementById('result').classList.add('hidden');
+          return;
+        }
         if (state.orderQty <= 0) {
           err.textContent = "注文枚数を入力してください。";
           err.classList.remove('hidden');
@@ -467,16 +588,12 @@
           return;
         }
 
-        // 計算
         const printPrice = calcPrintPrice(state.artwork, state.finish, state.orderQty, state.superEarly, state.early);
         const cardCost = calcCardCost(state.cardType, state.orderQty, state.bringInQty);
         const opt = calcOptions(state);
         const coupon = state.coupon;
-
-        // 合計（納期加算を除く）
         const baseTotal = Math.max(0, printPrice + cardCost + opt.optionsTotal - coupon);
 
-        // テーブル構築
         const head = document.getElementById('dueHead');
         const amt = document.getElementById('dueAmount');
         head.innerHTML = "";
@@ -495,34 +612,11 @@
           td.className = "px-3 py-3 text-center text-[16px] font-semibold cursor-pointer hover:bg-slate-50 rounded";
           const totalWithDue = baseTotal + DUE_ADD[idx];
           td.textContent = `${yen(totalWithDue)} 円`;
-          td.dataset.dueIdx = idx;
           td.title = "クリックで料金明細を表示";
-          td.addEventListener('click', () => {
-            const st = {
-              artwork: document.getElementById('artwork').value,
-              finish: document.getElementById('finish').value,
-              cardType: document.getElementById('cardType').value,
-              orderQty: toInt(document.getElementById('orderQty').value),
-              bringInQty: toInt(document.getElementById('bringInQty').value),
-              coupon: toInt(document.getElementById('coupon').value),
-              superEarly: document.getElementById('superEarly').checked,
-              early: document.getElementById('early').checked,
-              addrDataCount: toInt(document.getElementById('addrDataCount').value),
-              addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
-              addrFixCount: toInt(document.getElementById('addrFixCount').value),
-              optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
-              optCommentOnly: document.getElementById('optCommentOnly').checked,
-              optLogo: document.getElementById('optLogo').checked,
-              optProof: document.getElementById('optProof').checked,
-              optLogoCut: document.getElementById('optLogoCut').checked,
-              optScanCount: toInt(document.getElementById('optScanCount').value),
-            };
-            renderInvoice(idx, st);
-          });
+          td.addEventListener('click', () => { renderInvoice(idx, state); });
           amt.appendChild(td);
         });
 
-        // 内訳（軽く表示）
         const breakdown = document.getElementById('breakdown');
         breakdown.innerHTML = `
           <div class="flex flex-wrap items-center gap-3">
@@ -539,46 +633,110 @@
         document.getElementById('result').classList.remove('hidden');
       });
 
-      // --- 開発用ミニ自己テスト（コンソール出力）---
+      // ====== バーコード設定（個別） ======
+      const dlg = document.getElementById('dlgBarcode');
+      const txt = document.getElementById('barcodeJson');
+      document.getElementById('btnBarcodeCfg').addEventListener('click', () => {
+        txt.value = JSON.stringify(loadSingleMap(), null, 2);
+        dlg.showModal();
+      });
+      document.getElementById('btnBarcodeSave').addEventListener('click', () => {
+        try{
+          const obj = JSON.parse(txt.value||'{}');
+          for (const [k,v] of Object.entries(obj)){
+            if (/^\d{8}$/.test(v) && !isValidEAN8(v)) {
+              alert(`キー「${k}」のバーコード「${v}」は EAN-8 チェックに失敗しました。`);
+              return;
+            }
+          }
+          saveSingleMap(obj);
+          dlg.close();
+        }catch(e){
+          alert('JSONの形式が不正です');
+        }
+      });
+      document.getElementById('btnBarcodeReset').addEventListener('click', () => {
+        localStorage.removeItem(LS_KEY_SINGLE);
+        txt.value = JSON.stringify({}, null, 2);
+      });
+
+      // ====== バーコード登録（ページ貼付） ======
+      const dlgBulk = document.getElementById('dlgBulk');
+      const bulkText = document.getElementById('bulkText');
+      const bulkFinish = document.getElementById('bulkFinish');
+      const bulkGrade = document.getElementById('bulkGrade');
+      const bulkDisc = document.getElementById('bulkDisc');
+      const bulkKeyPreview = document.getElementById('bulkKeyPreview');
+      const bulkPreview = document.getElementById('bulkPreview');
+
+      function updateBulkKeyPreview(){
+        bulkKeyPreview.textContent = buildBulkKey(bulkGrade.value, bulkFinish.value, bulkDisc.value);
+      }
+      [bulkFinish, bulkGrade, bulkDisc].forEach(el=>el.addEventListener('change', updateBulkKeyPreview));
+      updateBulkKeyPreview();
+
+      document.getElementById('btnBarcodeBulk').addEventListener('click', () => {
+        bulkText.value = '';
+        bulkPreview.classList.add('hidden');
+        updateBulkKeyPreview();
+        dlgBulk.showModal();
+      });
+
+      document.getElementById('btnBulkSample').addEventListener('click', () => {
+        bulkText.value = "68208202 68208301 68208400 68208509 68208608 68208707 68208806 68208905 68209001 68209100 68209209 68209308 68209407 68209506 68209605 68209704 68209803 68209902 68210007 68210106 68210205";
+      });
+
+      function parseBulkCodes(raw){
+        const codes = (raw||'').match(/\d{8}/g) || [];
+        let arr = codes.slice();
+        if (arr.length === 22) arr = arr.slice(1); // 1枚分を除去
+        if (arr.length < 21) return { ok:false, msg:`8桁が ${arr.length} 個です。21個必要です（10〜200, 201+）。`, list:[] };
+        if (arr.length > 21) arr = arr.slice(0,21);
+        for (const c of arr){
+          if (!isValidEAN8(c)) return { ok:false, msg:`EAN-8チェックに失敗: ${c}`, list:[] };
+        }
+        return { ok:true, msg:`OK: ${arr.length} 個を取り込みます。`, list:arr };
+      }
+
+      document.getElementById('btnBulkParse').addEventListener('click', () => {
+        const r = parseBulkCodes(bulkText.value);
+        bulkPreview.classList.remove('hidden');
+        if (!r.ok){
+          bulkPreview.className = "mt-2 rounded-lg border border-red-200 bg-red-50 p-2 text-xs";
+          bulkPreview.textContent = r.msg;
+          return;
+        }
+        const lines = r.list.map((c,i)=> `${BANDS[i]}: ${c}`).join("\\n");
+        bulkPreview.className = "mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs";
+        bulkPreview.textContent = lines;
+      });
+
+      document.getElementById('btnBulkSave').addEventListener('click', () => {
+        const r = parseBulkCodes(bulkText.value);
+        if (!r.ok){ alert(r.msg); return; }
+        const key = buildBulkKey(bulkGrade.value, bulkFinish.value, bulkDisc.value);
+        const obj = loadBulkMap();
+        obj[key] = {};
+        r.list.forEach((code, i) => { obj[key][BANDS[i]] = code; });
+        saveBulkMap(obj);
+        alert(`保存しました：${key}`);
+        dlgBulk.close();
+      });
+
+      // ====== 自己テスト（コンソール） ======
       (function runSelfTests(){
         try {
           console.group("SelfTests");
-          console.assert(ceil10(12) === 20, 'ceil10(12) should be 20');
-          console.assert(ceil10(39) === 40, 'ceil10(39) should be 40');
-
-          // HIGH / print / 10枚 -> 5500
-          console.assert(calcPrintPrice('PHG','print',10,false,false) === 5500, 'HIGH/print/10 should be 5500');
-          // HIGH / print / 60枚 -> 5500 + 650*4 + 600*1 = 8700
-          console.assert(calcPrintPrice('PHG','print',60,false,false) === 8700, 'HIGH/print/60 should be 8700');
-          // HIGH / photo / 30枚 -> 5700 + 660*(3-1) = 7020
-          console.assert(calcPrintPrice('PHG','photo',30,false,false) === 7020, 'HIGH/photo/30 should be 7020');
+          console.assert(ceil10(12) === 20, 'ceil10(12) → 20');
+          console.assert(ceil10(39) === 40, 'ceil10(39) → 40');
+          console.assert(isValidEAN8('68208202') === true, 'EAN8 check 68208202');
+          console.assert(calcPrintPrice('MY','print',10,false,false) === 2500, 'MY/print/10=2500');
+          console.assert(calcPrintPrice('MY','print',60,false,false) === 2500 + 650*4 + 600*1, 'MY/print/60');
+          console.assert(calcPrintPrice('MY','photo',30,false,false) === 2700 + 660*(3-1), 'MY/photo/30');
           console.log('All tests passed.');
           console.groupEnd();
-        } catch(e){
-          console.error('SelfTests failed:', e);
-        }
+        } catch(e){ console.error('SelfTests failed:', e); }
       })();
-
-      // 外部から状態を取得（デバッグ用途）
-      window.getFormState = () => ({
-        artwork: document.getElementById('artwork').value,
-        finish: document.getElementById('finish').value,
-        cardType: document.getElementById('cardType').value,
-        orderQty: document.getElementById('orderQty').value,
-        bringInQty: document.getElementById('bringInQty').value,
-        coupon: document.getElementById('coupon').value,
-        superEarly: document.getElementById('superEarly').checked,
-        early: document.getElementById('early').checked,
-        addrDataCount: document.getElementById('addrDataCount').value,
-        addrPaperCount: document.getElementById('addrPaperCount').value,
-        addrFixCount: document.getElementById('addrFixCount').value,
-        optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
-        optCommentOnly: document.getElementById('optCommentOnly').checked,
-        optLogo: document.getElementById('optLogo').checked,
-        optProof: document.getElementById('optProof').checked,
-        optLogoCut: document.getElementById('optLogoCut').checked,
-        optScanCount: document.getElementById('optScanCount').value,
-      });
     </script>
   </body>
 </html>

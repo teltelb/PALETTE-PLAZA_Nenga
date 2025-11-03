@@ -314,6 +314,33 @@
       const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
       const fmtMD = (date) => date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
 
+     // 合計セルからも使い回す入力状態リーダー
+     function readState() {
+       const toInt = (s) => {
+         const v = parseInt(String(s || '').replace(/[^0-9]/g, ''), 10);
+         return Number.isFinite(v) ? v : 0;
+       };
+       return {
+         artwork: document.getElementById('artwork').value,
+         finish: document.getElementById('finish').value,
+         cardType: document.getElementById('cardType').value,
+         orderQty: toInt(document.getElementById('orderQty').value),
+         bringInQty: toInt(document.getElementById('bringInQty').value),
+         coupon: toInt(document.getElementById('coupon').value),
+         superEarly: document.getElementById('superEarly').checked,
+         early: document.getElementById('early').checked,
+         addrDataCount: toInt(document.getElementById('addrDataCount').value),
+         addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
+         addrFixCount: toInt(document.getElementById('addrFixCount').value),
+         optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
+         optCommentOnly: document.getElementById('optCommentOnly').checked,
+         optLogo: document.getElementById('optLogo').checked,
+         optProof: document.getElementById('optProof').checked,
+         optLogoCut: document.getElementById('optLogoCut').checked,
+         optScanCount: toInt(document.getElementById('optScanCount').value),
+       };
+     }
+
       // --- 印刷代の計算 ---
       function calcPrintPrice(code, finish, qtyRaw, isSuperEarly, isEarly) {
         const grade = CODE_TO_GRADE[code];
@@ -482,34 +509,44 @@
           head.appendChild(th);
 
           const td = document.createElement('td');
-          td.className = "px-3 py-3 text-center text-[16px] font-semibold cursor-pointer hover:bg-slate-50 rounded";
+          td.className = "px-2 py-2 align-middle";
+
+          // ボタン本体（セル全面クリック可能＆視認性UP）
+          const btn = document.createElement('button');
+          btn.type = "button";
+          btn.className = [
+            "group w-full rounded-xl border border-slate-300 bg-white",
+            "px-4 py-3 text-center text-[16px] font-semibold text-slate-800",
+            "shadow-soft transition",
+            "hover:-translate-y-[1px] hover:shadow-md hover:bg-slate-50",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400",
+            "active:translate-y-[1px]"
+          ].join(" ");
+
           const totalWithDue = baseTotal + DUE_ADD[idx];
-          td.textContent = `${yen(totalWithDue)} 円`;
-          td.dataset.dueIdx = idx;
-          td.title = "クリックで料金明細を表示";
-          td.addEventListener('click', () => {
-            const st = {
-              artwork: document.getElementById('artwork').value,
-              finish: document.getElementById('finish').value,
-              cardType: document.getElementById('cardType').value,
-              orderQty: toInt(document.getElementById('orderQty').value),
-              bringInQty: toInt(document.getElementById('bringInQty').value),
-              coupon: toInt(document.getElementById('coupon').value),
-              superEarly: document.getElementById('superEarly').checked,
-              early: document.getElementById('early').checked,
-              addrDataCount: toInt(document.getElementById('addrDataCount').value),
-              addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
-              addrFixCount: toInt(document.getElementById('addrFixCount').value),
-              optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
-              optCommentOnly: document.getElementById('optCommentOnly').checked,
-              optLogo: document.getElementById('optLogo').checked,
-              optProof: document.getElementById('optProof').checked,
-              optLogoCut: document.getElementById('optLogoCut').checked,
-              optScanCount: toInt(document.getElementById('optScanCount').value),
-            };
+          btn.setAttribute("aria-label", `${l.name} の合計 ¥${yen(totalWithDue)} の明細を表示`);
+          btn.title = "クリックで料金明細を表示";
+          btn.innerHTML = `
+            <div>¥${yen(totalWithDue)} 円</div>
+            <div class="mt-0.5 text-[11px] font-normal text-slate-500">明細を見る</div>
+          `;
+
+          // クリック & キーボード操作
+          btn.addEventListener('click', () => {
+            const st = readState();
             renderInvoice(idx, st);
           });
+          btn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              const st = readState();
+              renderInvoice(idx, st);
+            }
+          });
+
+          td.appendChild(btn);
           amt.appendChild(td);
+
         });
 
         // 内訳（軽く表示）
