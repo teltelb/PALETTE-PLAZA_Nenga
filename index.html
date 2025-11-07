@@ -233,7 +233,7 @@
                 <div></div>
                 <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
                   <div class="flex items-center justify-between text-[14px]"><span>合計（はがきを除く）</span><span id="sumExclCard" class="font-semibold"></span></div>
-                  <div class="mt-2 flex items-center justify-between text-[14px]"><span>はがき代</span><span id="sumCardCost" class="font-semibold"></span></div>
+                  
                 </div>
               </div>
             </div>
@@ -255,6 +255,13 @@
         "私製はがき(喪中用)": 0,
         "私製はがき(年賀印つき)": 0,
       };
+// はがき代バーコード（年賀/通常のみ 19802404、私製は '-'）
+function getCardBarcode(type){
+  const s = String(type || '').trim();
+  if (s === 'お年玉付き年賀はがき' || s === '通常郵便はがき') return '19802404';
+  return '-';
+}
+
 
       // --- 絵柄コード→グレード ---
       const CODE_TO_GRADE = (() => {
@@ -403,7 +410,13 @@
 
         const items = [];
         const finLabel = state.finish === 'photo' ? '写真キレイ仕上げ' : '印刷仕上げ';
-        items.push({ cat: '印刷', name: `${finLabel} / ${state.artwork || '-'}`, code: 'BC-PRINT', unit: printPrice, qty: 1, sum: printPrice });
+        const __pbc = computePrintBarcodes(state);
+        items.push({ cat: '印刷', name: `${finLabel} / ${state.artwork || '-'}`, code: (__pbc.main || '-'), unit: printPrice, qty: 1, sum: printPrice });
+        if ((__pbc.extraQty || 0) > 0){
+          const __unit = extraUnitPrice(state);
+          items.push({ cat: '印刷（200枚以降）', name: `${finLabel} / 追加コード`, code: __pbc.extraCode || '-', unit: __unit, qty: __pbc.extraQty, sum: __unit * __pbc.extraQty });
+        }
+
         items.push({ cat: '納期加算', name: DUE_LABELS[selectedIdx]?.name || '-', code: `BC-DUE-${selectedIdx}`, unit: dueAdd, qty: 1, sum: dueAdd });
 
         if (state.addrDataCount > 0)  items.push({ cat: '宛名', name: '宛名印刷（データ）', code: 'BC-ADDR-D', unit: UNIT.addrData,  qty: state.addrDataCount, sum: UNIT.addrData  * state.addrDataCount });
@@ -419,7 +432,17 @@
 
         if (state.coupon>0)        items.push({ cat: '値引', name: 'クーポン',      code: 'BC-COUPON',  unit: -state.coupon,   qty: 1, sum: -state.coupon });
 
-        const tbody = document.getElementById('invBody');
+        
+  // --- はがき代（上表に統合） ---
+        (function(){
+          const t = String(state.cardType||'').trim();
+          const net = Math.max(0, toInt(state.orderQty) - toInt(state.bringInQty));
+          const isJP = (t === 'お年玉付き年賀はがき' || t === '通常郵便はがき');
+          const unit = isJP ? 85 : 0;
+          const code = isJP ? '19802404' : '-';
+          items.push({ cat:'はがき代', name:(t||'-'), code: code, unit: unit, qty: net, sum: unit*net });
+        })();
+const tbody = document.getElementById('invBody');
         tbody.innerHTML = '';
         items.forEach(it => {
           const tr = document.createElement('tr');
@@ -436,8 +459,25 @@
         });
 
         const sumExcl = printPrice + opt.optionsTotal - state.coupon + dueAdd; // はがき代を除く
-        document.getElementById('sumExclCard').textContent = `¥${yen(sumExcl)}`;
-        document.getElementById('sumCardCost').textContent = `¥${yen(cardCost)}`;
+        document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it => it.cat !== 'はがき代').reduce((s,it)=>s+(it.sum||0),0))}`;
+        // はがき代バーコード表示（年賀/通常のみ）
+        (function(){
+          try{
+            const bc = getCardBarcode(state.cardType);
+            let bcEl = document.getElementById('cardBarcodeLabel');
+            if (!bcEl){
+              const sumEl = document.getElementById('sumCardCost');
+              if (sumEl && sumEl.parentElement){
+                bcEl = document.createElement('div');
+                bcEl.id = 'cardBarcodeLabel';
+                bcEl.className = 'text-xs text-slate-500 mt-1';
+                sumEl.parentElement.appendChild(bcEl);
+              }
+            }
+            if (bcEl){ bcEl.textContent = `はがき代バーコード: ${bc}`; }
+          }catch(e){/* no-op */}
+        })();
+    
 
         const invoice = document.getElementById('invoice');
         invoice.classList.remove('hidden');
@@ -606,6 +646,66 @@
         optLogoCut: document.getElementById('optLogoCut').checked,
         optScanCount: document.getElementById('optScanCount').value,
       });
-    </script>
+    
+      
+      function extraUnitPrice(state){
+        if (state.superEarly) return (state.finish === 'photo') ? 528 : 440;
+        if (state.early)      return (state.finish === 'photo') ? 594 : 495;
+        return (state.finish === 'photo') ? 660 : 550;
+      }
+// 接頭辞→グレード判定（★マップ）
+// ■ハイグレード★★★★: PHG, DN, ZN, RN, UN, SN, LN
+// ■プレミアム★★★    : PPR, DO, ZO, UO, BN
+// ■スタンダード★★    : PSD, BO
+// ■ライト★           : PLT（ライトはPLTのみ）
+// ■自分でデザイン     : MYデザイン → MY
+function gradeFromArtwork(name){
+  const n = String(name||'').trim();
+  if (!n) return undefined;
+  if (n === 'MYデザイン' || /^MY\b/i.test(n)) return 'MY';
+  const up = n.toUpperCase();
+  if (/^(PHG|DN|ZN|RN|UN|SN|LN)\b/.test(up)) return 'HIGH';
+  if (/^(PPR|DO|ZO|UO|BN)\b/.test(up))       return 'PREMIUM';
+  if (/^(PSD|BO)\b/.test(up))                return 'STANDARD';
+  if (/^PLT\b/.test(up))                     return 'LIGHT';
+  return undefined;
+}
+
+function ean8CheckDigit(s7){
+  s7 = String(s7);
+  if (!/^\d{7}$/.test(s7)) return null;
+  let sum=0;
+  for(let i=0;i<7;i++){ const d = s7.charCodeAt(i)-48; sum += (i%2===0)? d*3 : d; }
+  return (10 - (sum % 10)) % 10;
+}
+function makeEAN8(s7){
+  const cd = ean8CheckDigit(String(s7));
+  return cd===null ? "" : String(s7) + String(cd);
+}
+function computePrintBarcodes(state){
+        const base7 = (state.finish === 'photo') ? '5937320' : '6817880';
+        let off = 0;
+        if (state.superEarly) off += 0;
+        else if (state.early) off += 210;
+        else off += 420;
+        const g = gradeFromArtwork(state.artwork);
+        if (g === 'LIGHT') off += 630;
+        else if (g === 'STANDARD') off += 630*2;
+        else if (g === 'PREMIUM') off += 630*3;
+        else if (g === 'HIGH') off += 630*4;
+        const net = Math.max(0, (state.orderQty|0) - (state.bringInQty|0));
+        const block = Math.max(1, Math.ceil(net/10));
+        const qtyOffset = (block - 1) * 10;
+        const main7 = String(Number(base7) + off + Math.min(qtyOffset, 190)).padStart(7,'0');
+        const main  = makeEAN8(main7);
+        let extraCode = null, extraQty = 0;
+        if (net > 200){
+          const ex7 = String(Number(base7) + off + 200).padStart(7,'0');
+          extraCode = makeEAN8(ex7);
+          extraQty  = Math.ceil((net - 200) / 10);
+        }
+        return { main, extraCode, extraQty };
+      }
+</script>
   </body>
 </html>
