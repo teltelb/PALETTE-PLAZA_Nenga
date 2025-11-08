@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>パレットプラザ　年賀状 見積</title>
     <!-- TailwindCSS CDN: ビルド不要でGitHub Pages向け -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="TAILWIND_CDN_WARNING_FILTER">(function(){try{var o=console.warn;console.warn=function(){if(arguments&&arguments[0]&&typeof arguments[0]==='string'&&arguments[0].indexOf('cdn.tailwindcss.com should not be used in production')>-1){return;}return o.apply(console,arguments);};}catch(_){}})();</script>
+<script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -401,8 +402,102 @@ function getCardBarcode(type){
         return { addr, checks, scans, optionsTotal: addr + checks + scans };
       }
 
-      // --- 明細テーブル描画 ---
-      function renderInvoice(selectedIdx, state) {
+      
+      
+      // === Barcode sizing config ===
+      const QC_SCALE = 2;        // QuickChart module scale(小さいほど細い)
+      const BARCODE_HEIGHT = 64;        // px (縦)
+      const BARCODE_WIDTH_PX = 300;     // px (横) 画像に指定（QuickChartにも効く）
+      const BWIP_SCALE_X = 3;           // bwip-js 横方向スケール
+      const BWIP_SCALE_Y = 3;           // bwip-js 縦方向スケール
+      let JSB_MODULE_WIDTH = 2.0;     // JsBarcode 1モジュールの太さ(px)
+      // ==============================
+
+      
+      // === JAN/EAN 1.0倍率 設定 (JIS X0507) ===
+      const JAN_SCALE = 1.0;
+      const TARGET_DPI = 300;
+      const PX_PER_MM = TARGET_DPI / 25.4;
+      const JAN_X_MM = 0.33 * JAN_SCALE;
+      const JAN_H_MM = 22.86 * JAN_SCALE;
+      const JAN_L_MM = 37.29 * JAN_SCALE;
+      const JAN_Q_MM = 3.63 * JAN_SCALE;
+      const JAN_TOTAL_W_MM = JAN_L_MM + 2*JAN_Q_MM;
+      const JAN_TOTAL_W_PX = Math.round(JAN_TOTAL_W_MM * PX_PER_MM);
+      const JAN_H_PX       = Math.round(JAN_H_MM       * PX_PER_MM);
+      JSB_MODULE_WIDTH = +(JAN_X_MM * PX_PER_MM).toFixed(1);
+      function computeEanCheckDigit(numstr){
+        const s = String(numstr||'').replace(/[^0-9]/g,'');
+        const arr = s.split('').map(d=>+d);
+        const len = arr.length;
+        if (len!==7 && len!==12) return null;
+        let sum = 0;
+        for (let i=0;i<len;i++){
+          const n = arr[len-1-i];
+          sum += n * ((i%2===0)?3:1);
+        }
+        return (10 - (sum % 10)) % 10;
+      }
+      function normalizeEan(code){
+        let s = String(code||'').trim();
+        if (!/^\\d+$/.test(s)) return s;
+        if (s.length===12){ const cd = computeEanCheckDigit(s); if (cd!=null) s = s + cd; }
+        if (s.length===7){  const cd = computeEanCheckDigit(s); if (cd!=null) s = s + cd; }
+        return s;
+      }
+
+      // --- バーコード描画ユーティリティ ---
+      
+      function barcodeImgUrl(code){
+        const raw = String(code||'').trim();
+        const ean = normalizeEan(raw);
+        const isNum = /^\d+$/.test(ean);
+        if(!isNum) return null;
+
+        let type = 'code128';
+        if (/^\d{13}$/.test(ean)) type = 'ean13';
+        else if (/^\d{8}$/.test(ean)) type = 'ean8';
+
+        const base = 'https://quickchart.io/barcode';
+        const qs = new URLSearchParams({
+          type, text: ean, format: 'svg', label: ean,
+          background: 'fff',
+          width: String(JAN_TOTAL_W_PX),
+          height: String(JAN_H_PX)
+        }).toString();
+        return `${base}?${qs}`;
+      }
+      function renderCodeCell(code){
+        const url = barcodeImgUrl(code);
+        const s = String(code || '').trim();
+        if(!url) return s; // 数値でなければ従来通り文字列表示
+        // QuickChart が失敗した場合は bwip-js API をフォールバック
+        const fallback = 'https://bwipjs-api.metafloor.com/?' + new URLSearchParams({
+          bcid: 'code128',
+          text: s,
+          includetext: 'y',
+          scale: '2'
+        }).toString();
+        // 高さは行高に合わせて40px程度に固定
+        return `<div class="flex items-center gap-2">
+                  <img alt="barcode ${s}" src="${url}" onerror="this.onerror=null;this.src='${fallback}'" style="height:${JAN_H_PX}px; width:${JAN_TOTAL_W_PX}px; object-fit:contain; image-rendering:pixelated" />
+                </div>`;
+      }
+// --- 明細テーブル描画 ---
+      
+      // --- ローカルfallback: JsBarcodeが読み込まれていれば <svg data-barcode> を描画 ---
+      function activateLocalBarcodes(){
+        try{
+          if (!window.JsBarcode) return;
+          document.querySelectorAll('svg[data-barcode]').forEach(svg => {
+            const v = svg.getAttribute('data-barcode') || '';
+            if (/^\d+$/.test(v)) {
+              try{ JsBarcode(svg, v, {format:(svg.getAttribute('data-type')||'CODE128'), displayValue:true, fontSize:12, width: JSB_MODULE_WIDTH, height: JAN_H_PX}); }catch(_){}
+            }
+          });
+        }catch(_){}
+      }
+function renderInvoice(selectedIdx, state) {
         const printPrice = calcPrintPrice(state.artwork, state.finish, state.orderQty, state.superEarly, state.early);
         const cardCost   = calcCardCost(state.cardType, state.orderQty, state.bringInQty);
         const opt        = calcOptions(state);
@@ -447,10 +542,10 @@ const tbody = document.getElementById('invBody');
         items.forEach(it => {
           const tr = document.createElement('tr');
           tr.className = 'border-b border-slate-100';
-          tr.innerHTML = `
+          tr.innerHTML =`
             <td class="px-3 py-2">${it.cat}</td>
             <td class="px-3 py-2">${it.name}</td>
-            <td class="px-3 py-2">${it.code}</td>
+            <td class="px-3 py-2">${renderCodeCell(it.code)}</td>
             <td class="px-3 py-2 text-right">¥${yen(it.unit)}</td>
             <td class="px-3 py-2 text-right">${it.qty}</td>
             <td class="px-3 py-2 text-right">¥${yen(it.sum)}</td>
@@ -588,6 +683,8 @@ const tbody = document.getElementById('invBody');
           amt.appendChild(td);
 
         });
+        activateLocalBarcodes();
+
 
         // 内訳（軽く表示）
         const breakdown = document.getElementById('breakdown');
@@ -707,5 +804,6 @@ function computePrintBarcodes(state){
         return { main, extraCode, extraQty };
       }
 </script>
-  </body>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+</body>
 </html>
