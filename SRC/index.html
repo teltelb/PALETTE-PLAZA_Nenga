@@ -416,16 +416,18 @@ function getCardBarcode(type){
       
       // === JAN/EAN 1.0倍率 設定 (JIS X0507) ===
       const JAN_SCALE = 1.0;
-      const TARGET_DPI = 300;
-      const PX_PER_MM = TARGET_DPI / 25.4;
+      const TARGET_DPI = 300;            // QuickChartに投げる画像解像度
+      const PX_PER_MM_RENDER = TARGET_DPI / 25.4;
+      const CSS_PX_PER_MM = 96 / 25.4;   // ブラウザ表示の実寸換算
       const JAN_X_MM = 0.33 * JAN_SCALE;
       const JAN_H_MM = 22.86 * JAN_SCALE;
       const JAN_L_MM = 37.29 * JAN_SCALE;
       const JAN_Q_MM = 3.63 * JAN_SCALE;
       const JAN_TOTAL_W_MM = JAN_L_MM + 2*JAN_Q_MM;
-      const JAN_TOTAL_W_PX = Math.round(JAN_TOTAL_W_MM * PX_PER_MM);
-      const JAN_H_PX       = Math.round(JAN_H_MM       * PX_PER_MM);
-      JSB_MODULE_WIDTH = +(JAN_X_MM * PX_PER_MM).toFixed(1);
+      const JAN_TOTAL_W_PX = Math.round(JAN_TOTAL_W_MM * PX_PER_MM_RENDER);
+      const JAN_H_PX       = Math.round(JAN_H_MM       * PX_PER_MM_RENDER);
+      const JAN_H_CSS_PX   = +(JAN_H_MM * CSS_PX_PER_MM).toFixed(1);
+      JSB_MODULE_WIDTH = +(JAN_X_MM * CSS_PX_PER_MM).toFixed(2);
       function computeEanCheckDigit(numstr){
         const s = String(numstr||'').replace(/[^0-9]/g,'');
         const arr = s.split('').map(d=>+d);
@@ -480,7 +482,7 @@ function getCardBarcode(type){
         }).toString();
         // 高さは行高に合わせて40px程度に固定
         return `<div class="flex items-center gap-2">
-                  <img alt="barcode ${s}" src="${url}" onerror="this.onerror=null;this.src='${fallback}'" style="height:${JAN_H_PX}px; width:${JAN_TOTAL_W_PX}px; object-fit:contain; image-rendering:pixelated" />
+                  <img alt="barcode ${s}" src="${url}" onerror="this.onerror=null;this.src='${fallback}'" style="height:${JAN_H_MM}mm; width:${JAN_TOTAL_W_MM}mm; object-fit:contain; image-rendering:pixelated" />
                 </div>`;
       }
 // --- 明細テーブル描画 ---
@@ -492,7 +494,7 @@ function getCardBarcode(type){
           document.querySelectorAll('svg[data-barcode]').forEach(svg => {
             const v = svg.getAttribute('data-barcode') || '';
             if (/^\d+$/.test(v)) {
-              try{ JsBarcode(svg, v, {format:(svg.getAttribute('data-type')||'CODE128'), displayValue:true, fontSize:12, width: JSB_MODULE_WIDTH, height: JAN_H_PX}); }catch(_){}
+              try{ JsBarcode(svg, v, {format:(svg.getAttribute('data-type')||'CODE128'), displayValue:true, fontSize:12, width: JSB_MODULE_WIDTH, height: JAN_H_CSS_PX}); }catch(_){}
             }
           });
         }catch(_){}
