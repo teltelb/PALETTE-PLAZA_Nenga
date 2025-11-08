@@ -415,7 +415,7 @@ function getCardBarcode(type){
 
       
       // === JAN/EAN 1.0倍率 設定 (JIS X0507) ===
-      const JAN_SCALE = 1.0;
+      const JAN_SCALE = 0.9;
       const TARGET_DPI = 300;            // QuickChartに投げる画像解像度
       const PX_PER_MM_RENDER = TARGET_DPI / 25.4;
       const CSS_PX_PER_MM = 96 / 25.4;   // ブラウザ表示の実寸換算
