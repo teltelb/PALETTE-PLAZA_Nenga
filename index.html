@@ -78,9 +78,9 @@
           </div>
 
           <!-- 2行目 -->
-          <div class="mt-4 grid grid-cols-12 gap-4">
-            <!-- 注文枚数 -->
-            <div class="col-span-12 sm:col-span-6 md:col-span-3">
+            <div class="mt-4 grid grid-cols-12 gap-4">
+              <!-- 注文枚数 -->
+            <div class="col-span-12 sm:col-span-6 md:col-span-2">
               <label class="mb-1 block text-[13px] font-medium text-slate-600">注文枚数</label>
               <div class="relative">
                 <input id="orderQty" inputmode="numeric" placeholder="例: 30" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 outline-none focus:border-slate-400 focus:shadow-sm" />
@@ -89,7 +89,7 @@
             </div>
 
             <!-- 持込はがき -->
-            <div class="col-span-12 sm:col-span-6 md:col-span-3">
+            <div class="col-span-12 sm:col-span-6 md:col-span-2">
               <label class="mb-1 block text-[13px] font-medium text-slate-600">持込はがき</label>
               <div class="relative">
                 <input id="bringInQty" inputmode="numeric" placeholder="例: 10" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 outline-none focus:border-slate-400 focus:shadow-sm" />
@@ -98,14 +98,16 @@
             </div>
 
             <!-- クーポン -->
-            <div class="col-span-12 sm:col-span-6 md:col-span-3">
+            <div class="col-span-12 sm:col-span-6 md:col-span-5">
               <label class="mb-1 block text-[13px] font-medium text-slate-600">クーポン</label>
               <select id="coupon" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-400 focus:shadow-sm">
                 <option value="">選択してください</option>
-                <option>500</option>
-                <option>400</option>
-                <option>300</option>
-                <option>200</option>
+                <option value="500">DMクーポン500(昨年)</option>
+                <option value="500">DMクーポン500(一昨年)</option>
+                <option value="500">DMクーポン500(閉店)</option>
+                <option value="300">DMクーポン300(昨年)</option>
+                <option value="300">DMクーポン300(一昨年)</option>
+                <option value="300">DMクーポン300(閉店)</option>
               </select>
             </div>
 
@@ -290,6 +292,9 @@ function getCardBarcode(type){
 
       // --- 納期加算 ---
       const DUE_ADD = [1480, 1180, 880, 580, 300, 0]; // 当日〜5日後
+      const DUE_ADD_DEC = [1480, 1180, 880, 580, 300, 0];
+      const DUE_ADD_NOV = [ 980,  780, 580, 380, 200, 0];
+      function getDueAdds(now){ const d = now || new Date(); const m = d.getMonth(); const day = d.getDate(); if (m === 10 && day <= 30) return DUE_ADD_NOV; return DUE_ADD_DEC; }
       const DUE_LABELS = [
         { name: "当日仕上げ", offset: 0 },
         { name: "翌日仕上げ", offset: 1 },
@@ -415,7 +420,7 @@ function getCardBarcode(type){
 
       
       // === JAN/EAN 1.0倍率 設定 (JIS X0507) ===
-      const JAN_SCALE = 0.7;
+      const JAN_SCALE = 1.0;
       const TARGET_DPI = 300;            // QuickChartに投げる画像解像度
       const PX_PER_MM_RENDER = TARGET_DPI / 25.4;
       const CSS_PX_PER_MM = 96 / 25.4;   // ブラウザ表示の実寸換算
@@ -469,7 +474,7 @@ function getCardBarcode(type){
         }).toString();
         return `${base}?${qs}`;
       }
-      function renderCodeCell(code){
+        function renderCodeCell(code){
         const url = barcodeImgUrl(code);
         const s = String(code || '').trim();
         if(!url) return s; // 数値でなければ従来通り文字列表示
@@ -480,9 +485,10 @@ function getCardBarcode(type){
           includetext: 'y',
           scale: '2'
         }).toString();
-        // 高さは行高に合わせて40px程度に固定
-        return `<div class="flex items-center gap-2">
+        // バーコード本体 + 下にヒューマンリーダブル（数字）を表示
+        return `<div class="flex flex-col items-center gap-1">
                   <img alt="barcode ${s}" src="${url}" onerror="this.onerror=null;this.src='${fallback}'" style="height:${JAN_H_MM}mm; width:${JAN_TOTAL_W_MM}mm; object-fit:contain; image-rendering:pixelated" />
+                  <div class="font-mono text-[11px] text-slate-600 select-none">${s}</div>
                 </div>`;
       }
 // --- 明細テーブル描画 ---
@@ -499,11 +505,12 @@ function getCardBarcode(type){
           });
         }catch(_){}
       }
-function renderInvoice(selectedIdx, state) {
+function renderInvoice(selectedIdx, state, dueAdds) {
         const printPrice = calcPrintPrice(state.artwork, state.finish, state.orderQty, state.superEarly, state.early);
         const cardCost   = calcCardCost(state.cardType, state.orderQty, state.bringInQty);
         const opt        = calcOptions(state);
-        const dueAdd     = (DUE_ADD[selectedIdx] || 0);
+        const __dueAdds  = Array.isArray(dueAdds) ? dueAdds : DUE_ADD_DEC;
+        const dueAdd     = (__dueAdds[selectedIdx] || 0);
 
         const items = [];
         const finLabel = state.finish === 'photo' ? '写真キレイ仕上げ' : '印刷仕上げ';
@@ -637,6 +644,7 @@ const tbody = document.getElementById('invBody');
         amt.innerHTML = "";
 
         const today = new Date();
+        const dueAdds = getDueAdds(today);
         DUE_LABELS.forEach((l, idx) => {
           const d = addDays(today, l.offset);
           const th = document.createElement('th');
@@ -660,7 +668,7 @@ const tbody = document.getElementById('invBody');
             "active:translate-y-[1px]"
           ].join(" ");
 
-          const totalWithDue = baseTotal + DUE_ADD[idx];
+          const totalWithDue = baseTotal + (dueAdds[idx] || 0);
           btn.setAttribute("aria-label", `${l.name} の合計 ¥${yen(totalWithDue)} の明細を表示`);
           btn.title = "クリックで料金明細を表示";
           btn.innerHTML = `
@@ -671,13 +679,13 @@ const tbody = document.getElementById('invBody');
           // クリック & キーボード操作
           btn.addEventListener('click', () => {
             const st = readState();
-            renderInvoice(idx, st);
+            renderInvoice(idx, st, dueAdds);
           });
           btn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
               const st = readState();
-              renderInvoice(idx, st);
+              renderInvoice(idx, st, dueAdds);
             }
           });
 
