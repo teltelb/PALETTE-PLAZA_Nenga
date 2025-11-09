@@ -26,6 +26,8 @@
       .thin-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
       .thin-scroll::-webkit-scrollbar-track { background: transparent; }
       .pill { display:inline-flex; align-items:center; gap:.5rem; border-radius:9999px; background:#f1f5f9; padding:.25rem .75rem; font-size:12px; color:#475569; }
+      /* Hide 'コメントのみおまかせ' option */
+      label:has(#optCommentOnly) { display: none !important; }
     </style>
   </head>
   <body class="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
@@ -311,7 +313,6 @@ function getCardBarcode(type){
         addrFix: 50,
         scan: 600,
         omakase: 1500,
-        commentOnly: 1000,
         logo: 1200,
         proof: 1200,
         logoCut: 1200,
@@ -345,9 +346,8 @@ function getCardBarcode(type){
          addrDataCount: toInt(document.getElementById('addrDataCount').value),
          addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
          addrFixCount: toInt(document.getElementById('addrFixCount').value),
-         optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
-         optCommentOnly: document.getElementById('optCommentOnly').checked,
-         optLogo: document.getElementById('optLogo').checked,
+          optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
+          optLogo: document.getElementById('optLogo').checked,
          optProof: document.getElementById('optProof').checked,
          optLogoCut: document.getElementById('optLogoCut').checked,
          optScanCount: toInt(document.getElementById('optScanCount').value),
@@ -397,7 +397,6 @@ function getCardBarcode(type){
 
         const checks =
           (state.optOmakaseOrder ? UNIT.omakase : 0) +
-          (state.optCommentOnly ? UNIT.commentOnly : 0) +
           (state.optLogo ? UNIT.logo : 0) +
           (state.optProof ? UNIT.proof : 0) +
           (state.optLogoCut ? UNIT.logoCut : 0);
@@ -608,7 +607,6 @@ const tbody = document.getElementById('invBody');
           addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
           addrFixCount: toInt(document.getElementById('addrFixCount').value),
           optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
-          optCommentOnly: document.getElementById('optCommentOnly').checked,
           optLogo: document.getElementById('optLogo').checked,
           optProof: document.getElementById('optProof').checked,
           optLogoCut: document.getElementById('optLogoCut').checked,
@@ -747,7 +745,7 @@ const tbody = document.getElementById('invBody');
         addrPaperCount: document.getElementById('addrPaperCount').value,
         addrFixCount: document.getElementById('addrFixCount').value,
         optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
-        optCommentOnly: document.getElementById('optCommentOnly').checked,
+        
         optLogo: document.getElementById('optLogo').checked,
         optProof: document.getElementById('optProof').checked,
         optLogoCut: document.getElementById('optLogoCut').checked,
