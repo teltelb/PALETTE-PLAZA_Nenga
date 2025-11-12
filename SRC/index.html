@@ -292,7 +292,17 @@ function getCardBarcode(type){
       const DUE_ADD = [1480, 1180, 880, 580, 300, 0]; // 当日〜5日後
       const DUE_ADD_DEC = [1480, 1180, 880, 580, 300, 0];
       const DUE_ADD_NOV = [ 980,  780, 580, 380, 200, 0];
-      function getDueAdds(now){ const d = now || new Date(); const m = d.getMonth(); const day = d.getDate(); if (m === 10 && day <= 30) return DUE_ADD_NOV; return DUE_ADD_DEC; }
+      function isBeforeNovEnd(date){
+        const d = date || new Date();
+        const month = d.getMonth(); // 0-based
+        if (month < 10) return true;
+        if (month > 10) return false;
+        return d.getDate() <= 30;
+      }
+      function getDueAdds(now){ return isBeforeNovEnd(now) ? DUE_ADD_NOV : DUE_ADD_DEC; }
+      function getDueBarcode(now){
+        return isBeforeNovEnd(now) ? '68217006' : '68210908';
+      }
       const DUE_LABELS = [
         { name: "当日仕上げ", offset: 0 },
         { name: "翌日仕上げ", offset: 1 },
@@ -553,12 +563,16 @@ function getCardBarcode(type){
           });
         }catch(_){}
       }
-function renderInvoice(selectedIdx, state, dueAdds) {
+function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
         const printPrice = calcPrintPrice(state.artwork, state.finish, state.orderQty, state.superEarly, state.early);
         const cardCost   = calcCardCost(state.cardType, state.orderQty, state.bringInQty);
         const opt        = calcOptions(state);
         const __dueAdds  = Array.isArray(dueAdds) ? dueAdds : DUE_ADD_DEC;
         const dueAdd     = (__dueAdds[selectedIdx] || 0);
+        const dueCode    = dueBarcode || getDueBarcode();
+        const baseDue    = (__dueAdds && __dueAdds.length > 0) ? __dueAdds[0] : 0;
+        const dueDiscount = Math.max(0, baseDue - dueAdd);
+        const dueLabel   = DUE_LABELS[selectedIdx]?.name || '-';
 
         const items = [];
           const finLabel = state.finish === 'photo' ? '写真キレイ仕上げ' : '印刷仕上げ';
@@ -570,7 +584,8 @@ function renderInvoice(selectedIdx, state, dueAdds) {
           items.push({ cat: '印刷（200枚以降）', name: `${finLabel} / 追加コード`, code: __pbc.extraCode || '-', unit: __unit, qty: __pbc.extraQty, sum: __unit * __pbc.extraQty });
         }
 
-        items.push({ cat: '納期加算', name: DUE_LABELS[selectedIdx]?.name || '-', code: `BC-DUE-${selectedIdx}`, unit: dueAdd, qty: 1, sum: dueAdd });
+        const dueName = dueDiscount > 0 ? `${dueLabel}（${dueDiscount}）` : dueLabel;
+        items.push({ cat: '納期加算', name: dueName, code: dueCode, unit: dueAdd, qty: 1, sum: dueAdd });
 
           if (addrMeta.data.qty > 0)  items.push({ cat: '宛名', name: addrMeta.data.name, code: addrMeta.data.code, unit: addrMeta.data.unit,  qty: addrMeta.data.qty, sum: addrMeta.data.sum });
           if (addrMeta.paper.qty > 0) items.push({ cat: '宛名', name: addrMeta.paper.name, code: addrMeta.paper.code, unit: addrMeta.paper.unit, qty: addrMeta.paper.qty, sum: addrMeta.paper.sum });
@@ -698,6 +713,7 @@ const tbody = document.getElementById('invBody');
 
         const today = new Date();
         const dueAdds = getDueAdds(today);
+        const dueBarcode = getDueBarcode(today);
         DUE_LABELS.forEach((l, idx) => {
           const d = addDays(today, l.offset);
           const th = document.createElement('th');
@@ -730,17 +746,17 @@ const tbody = document.getElementById('invBody');
           `;
 
           // クリック & キーボード操作
-          btn.addEventListener('click', () => {
-            const st = readState();
-            renderInvoice(idx, st, dueAdds);
-          });
-          btn.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
+            btn.addEventListener('click', () => {
               const st = readState();
-              renderInvoice(idx, st, dueAdds);
-            }
-          });
+              renderInvoice(idx, st, dueAdds, dueBarcode);
+            });
+            btn.addEventListener('keydown', (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const st = readState();
+                renderInvoice(idx, st, dueAdds, dueBarcode);
+              }
+            });
 
           td.appendChild(btn);
           amt.appendChild(td);
