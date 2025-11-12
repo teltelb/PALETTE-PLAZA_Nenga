@@ -104,12 +104,12 @@
               <label class="mb-1 block text-[13px] font-medium text-slate-600">クーポン</label>
               <select id="coupon" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-400 focus:shadow-sm">
                 <option value="">選択してください</option>
-                <option value="500">DMクーポン500(昨年)</option>
-                <option value="500">DMクーポン500(一昨年)</option>
-                <option value="500">DMクーポン500(閉店)</option>
-                <option value="300">DMクーポン300(昨年)</option>
-                <option value="300">DMクーポン300(一昨年)</option>
-                <option value="300">DMクーポン300(閉店)</option>
+                <option value="500" data-barcode="0712105">DMクーポン500(昨年)</option>
+                <option value="300" data-barcode="0712105">DMクーポン300(昨年)</option>
+                <option value="500" data-barcode="07016806">DMクーポン500(一昨年)</option>
+                <option value="300" data-barcode="07016806">DMクーポン300(一昨年)</option>
+                <option value="500" data-barcode="07012204">DMクーポン500(閉店)</option>
+                <option value="300" data-barcode="07012204">DMクーポン300(閉店)</option>
               </select>
             </div>
 
@@ -163,26 +163,22 @@
           <div class="mt-6 rounded-2xl border border-slate-200 bg-white/60 p-4">
             <div class="mb-2 text-[15px] font-semibold tracking-wide text-slate-700">オプション</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
-                <input id="optOmakaseOrder" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">おまかせ注文</span>
-              </label>
+                <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
+                  <input id="optOmakaseOrder" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                  <span class="text-[15px]">おまかせ注文サービス</span>
+                </label>
               <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
                 <input id="optCommentOnly" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
                 <span class="text-[15px]">コメントのみおまかせ</span>
               </label>
-              <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
-                <input id="optLogo" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">ロゴ入れ</span>
+                <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
+                  <input id="optProof" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                  <span class="text-[15px]">校正サービス</span>
               </label>
-              <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
-                <input id="optProof" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">校正サービス</span>
-              </label>
-              <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
-                <input id="optLogoCut" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
-                <span class="text-[15px]">ロゴ切り抜き</span>
-              </label>
+                <label class="group inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition hover:bg-slate-100">
+                  <input id="optLogoCut" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-0" />
+                  <span class="text-[15px]">ロゴ切り抜き</span>
+                </label>
               <div class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
                 <label for="optScanCount" class="text-[15px]">スキャンサービス</label>
                 <input id="optScanCount" inputmode="numeric" placeholder="枚数" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 outline-none focus:border-slate-400" />
@@ -313,7 +309,6 @@ function getCardBarcode(type){
         addrFix: 50,
         scan: 600,
         omakase: 1500,
-        logo: 1200,
         proof: 1200,
         logoCut: 1200,
       };
@@ -324,32 +319,89 @@ function getCardBarcode(type){
         const v = parseInt(String(s || '').replace(/[^0-9]/g, ''), 10);
         return Number.isFinite(v) ? v : 0;
       };
+      function resolveCouponInfo(){
+          const el = document.getElementById('coupon');
+          if (!el) return { amount: 0, barcode: '', label: '' };
+          let selected = null;
+          if (el.selectedOptions && el.selectedOptions.length > 0) {
+            selected = el.selectedOptions[0];
+          } else if (typeof el.selectedIndex === 'number' && el.selectedIndex >= 0) {
+            selected = el.options[el.selectedIndex];
+          }
+          if (!selected || !selected.value) {
+            return { amount: 0, barcode: '', label: '' };
+          }
+          const barcode = (selected.dataset && selected.dataset.barcode) ? selected.dataset.barcode : '';
+          return {
+            amount: toInt(selected.value),
+            barcode,
+            label: (selected.textContent || '').trim()
+          };
+        }
+      const ADDR_BARCODE = '07019500';
+      const ADDR_COUPON_DISCOUNT = { data: 20, paper: 50 };
+      function getAddrLineMeta(state){
+          const s = state || {};
+          const dataQty = s.addrDataCount || 0;
+          const paperQty = s.addrPaperCount || 0;
+          const fixQty = s.addrFixCount || 0;
+          const hasCoupon = !!(s.coupon > 0);
+          const dataUnit = Math.max(0, UNIT.addrData - (hasCoupon ? ADDR_COUPON_DISCOUNT.data : 0));
+          const paperUnit = Math.max(0, UNIT.addrPaper - (hasCoupon ? ADDR_COUPON_DISCOUNT.paper : 0));
+          const dataName = hasCoupon ? '宛名印刷（データ）20"' : '宛名印刷（データ）';
+          const paperName = hasCoupon ? '宛名印刷（紙媒体）50"' : '宛名印刷（紙媒体）';
+          return {
+            data: {
+              name: dataName,
+              code: ADDR_BARCODE,
+              unit: dataUnit,
+              qty: dataQty,
+              sum: dataUnit * dataQty
+            },
+            paper: {
+              name: paperName,
+              code: ADDR_BARCODE,
+              unit: paperUnit,
+              qty: paperQty,
+              sum: paperUnit * paperQty
+            },
+            fix: {
+              name: '宛名修正',
+              code: 'BC-ADDR-F',
+              unit: UNIT.addrFix,
+              qty: fixQty,
+              sum: UNIT.addrFix * fixQty
+            }
+          };
+        }
       const ceil10 = (n) => Math.max(10, Math.ceil((n || 0)/10) * 10);
       const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
       const fmtMD = (date) => date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
 
      // 合計セルからも使い回す入力状態リーダー
-     function readState() {
-       const toInt = (s) => {
-         const v = parseInt(String(s || '').replace(/[^0-9]/g, ''), 10);
-         return Number.isFinite(v) ? v : 0;
-       };
-       return {
-         artwork: document.getElementById('artwork').value,
-         finish: document.getElementById('finish').value,
-         cardType: document.getElementById('cardType').value,
-         orderQty: toInt(document.getElementById('orderQty').value),
-         bringInQty: toInt(document.getElementById('bringInQty').value),
-         coupon: toInt(document.getElementById('coupon').value),
-         superEarly: document.getElementById('superEarly').checked,
-         early: document.getElementById('early').checked,
-         addrDataCount: toInt(document.getElementById('addrDataCount').value),
-         addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
-         addrFixCount: toInt(document.getElementById('addrFixCount').value),
+       function readState() {
+         const toInt = (s) => {
+           const v = parseInt(String(s || '').replace(/[^0-9]/g, ''), 10);
+           return Number.isFinite(v) ? v : 0;
+         };
+         const couponInfo = resolveCouponInfo();
+         return {
+           artwork: document.getElementById('artwork').value,
+           finish: document.getElementById('finish').value,
+           cardType: document.getElementById('cardType').value,
+           orderQty: toInt(document.getElementById('orderQty').value),
+           bringInQty: toInt(document.getElementById('bringInQty').value),
+           coupon: couponInfo.amount,
+           couponCode: couponInfo.barcode,
+           couponLabel: couponInfo.label,
+           superEarly: document.getElementById('superEarly').checked,
+           early: document.getElementById('early').checked,
+           addrDataCount: toInt(document.getElementById('addrDataCount').value),
+           addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
+           addrFixCount: toInt(document.getElementById('addrFixCount').value),
           optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
-          optLogo: document.getElementById('optLogo').checked,
-         optProof: document.getElementById('optProof').checked,
-         optLogoCut: document.getElementById('optLogoCut').checked,
+          optProof: document.getElementById('optProof').checked,
+          optLogoCut: document.getElementById('optLogoCut').checked,
          optScanCount: toInt(document.getElementById('optScanCount').value),
        };
      }
@@ -389,22 +441,19 @@ function getCardBarcode(type){
       }
 
       // --- 宛名/オプションの計算 ---
-      function calcOptions(state) {
-        const addr =
-          state.addrDataCount * UNIT.addrData +
-          state.addrPaperCount * UNIT.addrPaper +
-          state.addrFixCount * UNIT.addrFix;
+        function calcOptions(state) {
+          const addrMeta = getAddrLineMeta(state);
+          const addr = addrMeta.data.sum + addrMeta.paper.sum + addrMeta.fix.sum;
 
-        const checks =
-          (state.optOmakaseOrder ? UNIT.omakase : 0) +
-          (state.optLogo ? UNIT.logo : 0) +
-          (state.optProof ? UNIT.proof : 0) +
-          (state.optLogoCut ? UNIT.logoCut : 0);
+          const checks =
+            (state.optOmakaseOrder ? UNIT.omakase : 0) +
+            (state.optProof ? UNIT.proof : 0) +
+            (state.optLogoCut ? UNIT.logoCut : 0);
 
-        const scans = state.optScanCount * UNIT.scan;
+          const scans = state.optScanCount * UNIT.scan;
 
-        return { addr, checks, scans, optionsTotal: addr + checks + scans };
-      }
+          return { addr, checks, scans, optionsTotal: addr + checks + scans };
+        }
 
       
       
@@ -512,9 +561,10 @@ function renderInvoice(selectedIdx, state, dueAdds) {
         const dueAdd     = (__dueAdds[selectedIdx] || 0);
 
         const items = [];
-        const finLabel = state.finish === 'photo' ? '写真キレイ仕上げ' : '印刷仕上げ';
-        const __pbc = computePrintBarcodes(state);
-        items.push({ cat: '印刷', name: `${finLabel} / ${state.artwork || '-'}`, code: (__pbc.main || '-'), unit: printPrice, qty: 1, sum: printPrice });
+          const finLabel = state.finish === 'photo' ? '写真キレイ仕上げ' : '印刷仕上げ';
+          const __pbc = computePrintBarcodes(state);
+          const addrMeta = getAddrLineMeta(state);
+          items.push({ cat: '印刷', name: `${finLabel} / ${state.artwork || '-'}`, code: (__pbc.main || '-'), unit: printPrice, qty: 1, sum: printPrice });
         if ((__pbc.extraQty || 0) > 0){
           const __unit = extraUnitPrice(state);
           items.push({ cat: '印刷（200枚以降）', name: `${finLabel} / 追加コード`, code: __pbc.extraCode || '-', unit: __unit, qty: __pbc.extraQty, sum: __unit * __pbc.extraQty });
@@ -522,18 +572,21 @@ function renderInvoice(selectedIdx, state, dueAdds) {
 
         items.push({ cat: '納期加算', name: DUE_LABELS[selectedIdx]?.name || '-', code: `BC-DUE-${selectedIdx}`, unit: dueAdd, qty: 1, sum: dueAdd });
 
-        if (state.addrDataCount > 0)  items.push({ cat: '宛名', name: '宛名印刷（データ）', code: 'BC-ADDR-D', unit: UNIT.addrData,  qty: state.addrDataCount, sum: UNIT.addrData  * state.addrDataCount });
-        if (state.addrPaperCount > 0) items.push({ cat: '宛名', name: '宛名印刷（紙媒体）', code: 'BC-ADDR-P', unit: UNIT.addrPaper, qty: state.addrPaperCount, sum: UNIT.addrPaper * state.addrPaperCount });
-        if (state.addrFixCount > 0)   items.push({ cat: '宛名', name: '宛名修正',           code: 'BC-ADDR-F', unit: UNIT.addrFix,   qty: state.addrFixCount,  sum: UNIT.addrFix   * state.addrFixCount  });
+          if (addrMeta.data.qty > 0)  items.push({ cat: '宛名', name: addrMeta.data.name, code: addrMeta.data.code, unit: addrMeta.data.unit,  qty: addrMeta.data.qty, sum: addrMeta.data.sum });
+          if (addrMeta.paper.qty > 0) items.push({ cat: '宛名', name: addrMeta.paper.name, code: addrMeta.paper.code, unit: addrMeta.paper.unit, qty: addrMeta.paper.qty, sum: addrMeta.paper.sum });
+          if (addrMeta.fix.qty > 0)   items.push({ cat: '宛名', name: addrMeta.fix.name,   code: addrMeta.fix.code,   unit: addrMeta.fix.unit,   qty: addrMeta.fix.qty,   sum: addrMeta.fix.sum  });
 
-        if (state.optOmakaseOrder) items.push({ cat: 'OP', name: 'おまかせ注文',     code: 'BC-OMAKASE', unit: UNIT.omakase,    qty: 1, sum: UNIT.omakase });
+        if (state.optOmakaseOrder) items.push({ cat: 'OP', name: 'おまかせ注文サービス',     code: '68211202', unit: UNIT.omakase,    qty: 1, sum: UNIT.omakase });
         if (state.optCommentOnly)  items.push({ cat: 'OP', name: 'コメントのみおまかせ', code: 'BC-CMT',     unit: UNIT.commentOnly, qty: 1, sum: UNIT.commentOnly });
-        if (state.optLogo)         items.push({ cat: 'OP', name: 'ロゴ入れ',         code: 'BC-LOGO',    unit: UNIT.logo,       qty: 1, sum: UNIT.logo });
-        if (state.optProof)        items.push({ cat: 'OP', name: '校正サービス',     code: 'BC-PROOF',   unit: UNIT.proof,      qty: 1, sum: UNIT.proof });
-        if (state.optLogoCut)      items.push({ cat: 'OP', name: 'ロゴ切り抜き',     code: 'BC-LOGOCUT', unit: UNIT.logoCut,    qty: 1, sum: UNIT.logoCut });
-        if (state.optScanCount>0)  items.push({ cat: 'OP', name: 'スキャンサービス', code: 'BC-SCAN',    unit: UNIT.scan,       qty: state.optScanCount, sum: UNIT.scan * state.optScanCount });
+        if (state.optProof)        items.push({ cat: 'OP', name: '校正サービス',     code: '68211400',   unit: UNIT.proof,      qty: 1, sum: UNIT.proof });
+        if (state.optLogoCut)      items.push({ cat: 'OP', name: 'ロゴ切り抜き',     code: '68211509', unit: UNIT.logoCut,    qty: 1, sum: UNIT.logoCut });
+        if (state.optScanCount>0)  items.push({ cat: 'OP', name: 'スキャンサービス', code: '68211301',    unit: UNIT.scan,       qty: state.optScanCount, sum: UNIT.scan * state.optScanCount });
 
-        if (state.coupon>0)        items.push({ cat: '値引', name: 'クーポン',      code: 'BC-COUPON',  unit: -state.coupon,   qty: 1, sum: -state.coupon });
+        if (state.coupon>0) {
+          const couponName = state.couponLabel || 'DMクーポン';
+          const couponCode = state.couponCode || 'BC-COUPON';
+          items.push({ cat: '値引', name: couponName, code: couponCode, unit: -state.coupon, qty: 1, sum: -state.coupon });
+        }
 
         
   // --- はがき代（上表に統合） ---
@@ -594,20 +647,22 @@ const tbody = document.getElementById('invBody');
         err.classList.add('hidden');
         err.textContent = '';
 
+        const couponInfo = resolveCouponInfo();
         const state = {
           artwork: document.getElementById('artwork').value,
           finish: document.getElementById('finish').value,
           cardType: document.getElementById('cardType').value,
           orderQty: toInt(document.getElementById('orderQty').value),
           bringInQty: toInt(document.getElementById('bringInQty').value),
-          coupon: toInt(document.getElementById('coupon').value),
+          coupon: couponInfo.amount,
+          couponCode: couponInfo.barcode,
+          couponLabel: couponInfo.label,
           superEarly: document.getElementById('superEarly').checked,
           early: document.getElementById('early').checked,
           addrDataCount: toInt(document.getElementById('addrDataCount').value),
           addrPaperCount: toInt(document.getElementById('addrPaperCount').value),
           addrFixCount: toInt(document.getElementById('addrFixCount').value),
           optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
-          optLogo: document.getElementById('optLogo').checked,
           optProof: document.getElementById('optProof').checked,
           optLogoCut: document.getElementById('optLogoCut').checked,
           optScanCount: toInt(document.getElementById('optScanCount').value),
@@ -746,7 +801,6 @@ const tbody = document.getElementById('invBody');
         addrFixCount: document.getElementById('addrFixCount').value,
         optOmakaseOrder: document.getElementById('optOmakaseOrder').checked,
         
-        optLogo: document.getElementById('optLogo').checked,
         optProof: document.getElementById('optProof').checked,
         optLogoCut: document.getElementById('optLogoCut').checked,
         optScanCount: document.getElementById('optScanCount').value,
