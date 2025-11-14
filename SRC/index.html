@@ -151,7 +151,7 @@
 
             <!-- 宛名修正 -->
             <div class="col-span-12 sm:col-span-6 md:col-span-4">
-              <label class="mb-1 block text-[13px] font-medium text-slate-600">宛名修正</label>
+              <label class="mb-1 block text-[13px] font-medium text-slate-600">宛名修正・削除</label>
               <div class="relative">
                 <input id="addrFixCount" inputmode="numeric" placeholder="例: 5" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 outline-none focus:border-slate-400 focus:shadow-sm" />
                 <span class="pointer-events-none absolute inset-y-0 right-3 my-auto inline-flex h-[22px] items-center text-sm text-slate-500">枚</span>
@@ -376,8 +376,8 @@ function getCardBarcode(type){
               sum: paperUnit * paperQty
             },
             fix: {
-              name: '宛名修正',
-              code: 'BC-ADDR-F',
+              name: '宛名修正・削除',
+              code: '68210700',
               unit: UNIT.addrFix,
               qty: fixQty,
               sum: UNIT.addrFix * fixQty
