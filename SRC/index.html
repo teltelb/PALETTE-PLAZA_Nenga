@@ -104,8 +104,8 @@
               <label class="mb-1 block text-[13px] font-medium text-slate-600">クーポン</label>
               <select id="coupon" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-400 focus:shadow-sm">
                 <option value="">選択してください</option>
-                <option value="500" data-barcode="0712105">DMクーポン500(昨年)</option>
-                <option value="300" data-barcode="0712105">DMクーポン300(昨年)</option>
+                <option value="500" data-barcode="07012105">DMクーポン500(昨年)</option>
+                <option value="300" data-barcode="07012105">DMクーポン300(昨年)</option>
                 <option value="500" data-barcode="07016806">DMクーポン500(一昨年)</option>
                 <option value="300" data-barcode="07016806">DMクーポン300(一昨年)</option>
                 <option value="500" data-barcode="07012204">DMクーポン500(閉店)</option>
@@ -358,19 +358,24 @@ function getCardBarcode(type){
           const hasCoupon = !!(s.coupon > 0);
           const dataUnit = Math.max(0, UNIT.addrData - (hasCoupon ? ADDR_COUPON_DISCOUNT.data : 0));
           const paperUnit = Math.max(0, UNIT.addrPaper - (hasCoupon ? ADDR_COUPON_DISCOUNT.paper : 0));
-          const dataName = hasCoupon ? '宛名印刷（データ）20"' : '宛名印刷（データ）';
-          const paperName = hasCoupon ? '宛名印刷（紙媒体）50"' : '宛名印刷（紙媒体）';
+          const dataName = hasCoupon ? '宛名印刷（データ）20' : '宛名印刷（データ）';
+          const paperName = hasCoupon ? '宛名印刷（紙媒体）50' : '宛名印刷（紙媒体）';
+          // 宛名（データ）のバーコードは条件で切替
+          // ・クーポン未指定: 68210304
+          // ・クーポン指定あり: 68210403
+          const dataCode = hasCoupon ? '68210403' : '68210304';
+          const paperCode = hasCoupon ? '68216900' : '68210502';
           return {
             data: {
               name: dataName,
-              code: ADDR_BARCODE,
+              code: dataCode,
               unit: dataUnit,
               qty: dataQty,
               sum: dataUnit * dataQty
             },
             paper: {
               name: paperName,
-              code: ADDR_BARCODE,
+              code: paperCode,
               unit: paperUnit,
               qty: paperQty,
               sum: paperUnit * paperQty
@@ -585,22 +590,27 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
         }
 
         const dueName = dueDiscount > 0 ? `${dueLabel}（${dueDiscount}）` : dueLabel;
-        items.push({ cat: '納期加算', name: dueName, code: dueCode, unit: dueAdd, qty: 1, sum: dueAdd });
+        items.push({ cat: '納期', name: dueName, code: dueCode, unit: dueAdd, qty: 1, sum: dueAdd });
 
-          if (addrMeta.data.qty > 0)  items.push({ cat: '宛名', name: addrMeta.data.name, code: addrMeta.data.code, unit: addrMeta.data.unit,  qty: addrMeta.data.qty, sum: addrMeta.data.sum });
-          if (addrMeta.paper.qty > 0) items.push({ cat: '宛名', name: addrMeta.paper.name, code: addrMeta.paper.code, unit: addrMeta.paper.unit, qty: addrMeta.paper.qty, sum: addrMeta.paper.sum });
-          if (addrMeta.fix.qty > 0)   items.push({ cat: '宛名', name: addrMeta.fix.name,   code: addrMeta.fix.code,   unit: addrMeta.fix.unit,   qty: addrMeta.fix.qty,   sum: addrMeta.fix.sum  });
+          if (addrMeta.data.qty > 0)  items.push({ cat: 'オプション', name: addrMeta.data.name, code: addrMeta.data.code, unit: addrMeta.data.unit,  qty: addrMeta.data.qty, sum: addrMeta.data.sum });
+          if (addrMeta.paper.qty > 0) items.push({ cat: 'オプション', name: addrMeta.paper.name, code: addrMeta.paper.code, unit: addrMeta.paper.unit, qty: addrMeta.paper.qty, sum: addrMeta.paper.sum });
+          if (addrMeta.fix.qty > 0)   items.push({ cat: 'オプション', name: addrMeta.fix.name,   code: addrMeta.fix.code,   unit: addrMeta.fix.unit,   qty: addrMeta.fix.qty,   sum: addrMeta.fix.sum  });
 
-        if (state.optOmakaseOrder) items.push({ cat: 'OP', name: 'おまかせ注文サービス',     code: '68211202', unit: UNIT.omakase,    qty: 1, sum: UNIT.omakase });
-        if (state.optCommentOnly)  items.push({ cat: 'OP', name: 'コメントのみおまかせ', code: 'BC-CMT',     unit: UNIT.commentOnly, qty: 1, sum: UNIT.commentOnly });
-        if (state.optProof)        items.push({ cat: 'OP', name: '校正サービス',     code: '68211400',   unit: UNIT.proof,      qty: 1, sum: UNIT.proof });
-        if (state.optLogoCut)      items.push({ cat: 'OP', name: 'ロゴ切り抜き',     code: '68211509', unit: UNIT.logoCut,    qty: 1, sum: UNIT.logoCut });
-        if (state.optScanCount>0)  items.push({ cat: 'OP', name: 'スキャンサービス', code: '68211301',    unit: UNIT.scan,       qty: state.optScanCount, sum: UNIT.scan * state.optScanCount });
+          // 宛名（データ）あり + DMクーポン指定時は情報行を追加（0円）
+          if ((state.coupon > 0) && ((addrMeta.data.qty > 0) || (addrMeta.paper.qty > 0))) {
+            items.push({ cat: 'クーポン', name: 'DMクーポン（宛名印刷）', code: ADDR_BARCODE, unit: 0, qty: 1, sum: 0 });
+          }
+
+        if (state.optOmakaseOrder) items.push({ cat: 'オプション', name: 'おまかせ注文サービス',     code: '68211202', unit: UNIT.omakase,    qty: 1, sum: UNIT.omakase });
+        if (state.optCommentOnly)  items.push({ cat: 'オプション', name: 'コメントのみおまかせ', code: 'BC-CMT',     unit: UNIT.commentOnly, qty: 1, sum: UNIT.commentOnly });
+        if (state.optProof)        items.push({ cat: 'オプション', name: '校正サービス',     code: '68211400',   unit: UNIT.proof,      qty: 1, sum: UNIT.proof });
+        if (state.optLogoCut)      items.push({ cat: 'オプション', name: 'ロゴ切り抜き',     code: '68211509', unit: UNIT.logoCut,    qty: 1, sum: UNIT.logoCut });
+        if (state.optScanCount>0)  items.push({ cat: 'オプション', name: 'スキャンサービス', code: '68211301',    unit: UNIT.scan,       qty: state.optScanCount, sum: UNIT.scan * state.optScanCount });
 
         if (state.coupon>0) {
           const couponName = state.couponLabel || 'DMクーポン';
           const couponCode = state.couponCode || 'BC-COUPON';
-          items.push({ cat: '値引', name: couponName, code: couponCode, unit: -state.coupon, qty: 1, sum: -state.coupon });
+          items.push({ cat: 'クーポン', name: couponName, code: couponCode, unit: -state.coupon, qty: 1, sum: -state.coupon });
         }
 
         
@@ -613,9 +623,33 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
           const code = isJP ? '19802404' : '-';
           items.push({ cat:'はがき代', name:(t||'-'), code: code, unit: unit, qty: net, sum: unit*net });
         })();
-const tbody = document.getElementById('invBody');
+        if (dueAdd === 0) {
+          for (let i = items.length - 1; i >= 0; i--) {
+            try { if (items[i] && items[i].code === dueCode) { items.splice(i, 1); } } catch(_) {}
+          }
+        }
+        const tbody = document.getElementById('invBody');
         tbody.innerHTML = '';
-        items.forEach(it => {
+        // 並び替え: 印刷 → 納期 → 宛名 → オプション → クーポン（値引含む）
+        // クーポン内では DMクーポン（宛名印刷/07019500）を最後に配置
+        const sorted = items.slice();
+        sorted.forEach((it, i) => it.__idx = i);
+        const CAT_ORDER = { '印刷':1, '納期':2, '宛名':3, 'オプション':4, '値引':5, 'クーポン':5 };
+        sorted.sort((a,b) => {
+          const ra = ((a.cat === '印刷')?1 : (a.cat === '納期')?2 : (a.cat === 'オプション' || a.cat === '宛名')?3 : (a.cat === 'OP')?4 : ((a.cat === '値引' || a.cat === 'クーポン')?5 : 99));
+          const rb = ((b.cat === '印刷')?1 : (b.cat === '納期')?2 : (b.cat === 'オプション' || b.cat === '宛名')?3 : (b.cat === 'OP')?4 : ((b.cat === '値引' || b.cat === 'クーポン')?5 : 99));
+          if (ra !== rb) return ra - rb;
+          const aIsCoupon = (a.cat === 'クーポン' || a.cat === '値引');
+          const bIsCoupon = (b.cat === 'クーポン' || b.cat === '値引');
+          if (aIsCoupon && bIsCoupon) {
+            const aSub = (a.cat === 'クーポン' && String(a.code||'').trim() === ADDR_BARCODE) ? 1 : 0;
+            const bSub = (b.cat === 'クーポン' && String(b.code||'').trim() === ADDR_BARCODE) ? 1 : 0;
+            if (aSub !== bSub) return aSub - bSub; // DM宛名クーポンを最後に
+          }
+          return (a.__idx - b.__idx); // 安定ソート
+        });
+        
+        sorted.forEach(it => {
           const tr = document.createElement('tr');
           tr.className = 'border-b border-slate-100';
           tr.innerHTML =`
@@ -771,12 +805,19 @@ const tbody = document.getElementById('invBody');
           <div class="flex flex-wrap items-center gap-3">
             <span class="pill">印刷代: <b>¥${yen(printPrice)}</b></span>
             <span class="pill">はがき代: <b>¥${yen(cardCost)}</b></span>
-            <span class="pill">宛名: <b>¥${yen(opt.addr)}</b></span>
+            <span class="pill">オプション: <b>¥${yen((opt.addr||0) + (opt.checks||0) + (opt.scans||0))}</b></span>
             <span class="pill">その他オプション: <b>¥${yen(opt.checks + opt.scans)}</b></span>
             <span class="pill">クーポン: <b>−¥${yen(coupon)}</b></span>
             <span class="pill">小計(納期加算前): <b>¥${yen(baseTotal)}</b></span>
           </div>
         `;
+        // 旧「その他オプション」ピルが残っている場合は削除して「オプション」に統合表示
+        try{
+          document.querySelectorAll('#breakdown .pill').forEach(el=>{
+            const t = (el.textContent||'').trim();
+            if (t.indexOf('その他オプション') >= 0) { el.remove(); }
+          });
+        }catch(_){}
 
         const invoiceEl = document.getElementById('invoice'); if (invoiceEl) invoiceEl.classList.add('hidden');
         document.getElementById('result').classList.remove('hidden');
