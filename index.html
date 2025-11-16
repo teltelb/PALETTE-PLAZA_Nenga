@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
@@ -42,17 +42,34 @@
               <label class="mb-1 block text-[13px] font-medium text-slate-600">絵柄</label>
               <select id="artwork" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 outline-none focus:border-slate-400 focus:shadow-sm">
                 <option value="">選択してください</option>
-                <!-- ハイグレード★★★★ -->
-                <option>PHG</option><option>DN</option><option>ZN</option><option>RN</option><option>UN</option><option>SN</option><option>LN</option>
-                <!-- プレミアム★★★ -->
-                <option>PPR</option><option>DO</option><option>ZO</option><option>UO</option><option>BN</option>
-                <!-- スタンダード★★ -->
-                <option>PSD</option><option>BO</option>
-                <!-- ライト★ -->
-                <option>PLT</option>
-                <!-- MYデザイン -->
-                <option>MYデザイン</option>
-              </select>
+                <option disabled>---イラスト年賀状---</option>
+                <option value="PHG">PHG</option>
+                <option value="PPR">PPR</option>
+                <option value="PSD">PSD</option>
+                <option value="PLT">PLT</option>
+                <option value="BO">BO</option>
+                <option value="DO">DO(ディズニー)</option>
+                <option value="ZO">ZO(ちいかわ)</option>
+                <option value="UO">UO(スヌーピー)</option>
+                <option disabled>---写真入り年賀状---</option>
+                <option value="DN">DN(ディズニー)</option>
+                <option value="ZN">ZN(ちいかわ)</option>
+                <option value="RN">RN(サンエックス)</option>
+                <option value="UN">UN(スヌーピー)</option>
+                <option value="SN">SN(ロディ)</option>
+                <option value="LN">LN</option>
+                <option value="BN">BN</option>
+                <option value="MY">MYデザイン</option>
+                <option disabled>---喪中寒中---</option>
+                <option value="BM">BM</option>
+                <option value="BMP">BM(写真入り)</option>
+                <option value="BW">BW</option>
+                <option value="BWP">BW(写真入り)</option>
+                <option value="DW">DW</option>
+                <option value="DWP">DW(写真入り)</option>
+                <option value="UW">UW</option>
+                <option value="UWP">UW(写真入り)</option>
+</select>
             </div>
 
             <!-- 仕上がり -->
@@ -265,13 +282,13 @@ function getCardBarcode(type){
 
 
       // --- 絵柄コード→グレード ---
-      const CODE_TO_GRADE = (() => {
+                  const CODE_TO_GRADE = (() => {
         const map = {};
-        ['PHG','DN','ZN','RN','UN','SN','LN'].forEach(c => map[c] = 'HIGH');     // ハイグレード★★★★
-        ['PPR','DO','ZO','UO','BN'].forEach(c => map[c] = 'PREMIUM');            // プレミアム★★★
-        ['PSD','BO'].forEach(c => map[c] = 'STANDARD');                           // スタンダード★★
-        ['PLT'].forEach(c => map[c] = 'LIGHT');                                   // ライト★
-        ['MY'].forEach(c => map[c] = 'MY');                                       // MYデザイン
+        ["PHG","DN","ZN","RN","UN","SN","LN","DWP","UWP"].forEach(c => map[c] = "HIGH");
+        ["PPR","DO","ZO","UO","BN","DW","UW","BMP","BWP"].forEach(c => map[c] = "PREMIUM");
+        ["PSD","BO","BM","BW"].forEach(c => map[c] = "STANDARD");
+        ["PLT"].forEach(c => map[c] = "LIGHT");
+        ["MY"].forEach(c => map[c] = "MY");
         return map;
       })();
 
@@ -880,13 +897,12 @@ function gradeFromArtwork(name){
   if (!n) return undefined;
   if (n === 'MYデザイン' || /^MY\b/i.test(n)) return 'MY';
   const up = n.toUpperCase();
-  if (/^(PHG|DN|ZN|RN|UN|SN|LN)\b/.test(up)) return 'HIGH';
-  if (/^(PPR|DO|ZO|UO|BN)\b/.test(up))       return 'PREMIUM';
-  if (/^(PSD|BO)\b/.test(up))                return 'STANDARD';
-  if (/^PLT\b/.test(up))                     return 'LIGHT';
+  if (/^(PHG|DN|ZN|RN|UN|SN|LN|DWP|UWP)\b/.test(up)) return 'HIGH';
+  if (/^(PPR|DO|ZO|UO|BN|DW|UW|BMP|BWP)\b/.test(up)) return 'PREMIUM';
+  if (/^(PSD|BO|BM|BW)\b/.test(up)) return 'STANDARD';
+  if (/^PLT\b/.test(up)) return 'LIGHT';
   return undefined;
 }
-
 function ean8CheckDigit(s7){
   s7 = String(s7);
   if (!/^\d{7}$/.test(s7)) return null;
