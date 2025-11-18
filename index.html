@@ -792,7 +792,7 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
           btn.setAttribute("aria-label", `${l.name} の合計 ¥${yen(totalWithDue)} の明細を表示`);
           btn.title = "クリックで料金明細を表示";
           btn.innerHTML = `
-            <div>¥${yen(totalWithDue)} 円</div>
+            <div>¥${yen(totalWithDue)} </div>
             <div class="mt-0.5 text-[11px] font-normal text-slate-500">明細を見る</div>
           `;
 
@@ -942,3 +942,4 @@ function computePrintBarcodes(state){
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 </body>
 </html>
+
