@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
@@ -250,10 +250,22 @@
               <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div></div>
                 <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <div class="flex items-center justify-between text-[14px]"><span>合計（はがきを除く）</span><span id="sumExclCard" class="font-semibold"></span></div>
-                  
+                  <div class="overflow-x-auto">
+                    <table class="min-w-full border-collapse text-[14px]">
+                      <tbody>
+                        <tr class="border-b border-slate-300">
+                          <td class="px-3 py-2 text-left">合計（はがき除く）</td>
+                          <td class="px-3 py-2 text-right"><span id="sumExclCard" class="font-semibold"></span></td>
+                        </tr>
+                        <tr>
+                          <td class="px-3 py-2 text-left">総計（はがき含む）</td>
+                          <td class="px-3 py-2 text-right"><span id="sumInclCard" class="font-semibold"></span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+                </div>
             </div>
           </div>
         </div>
@@ -505,7 +517,7 @@ function getCardBarcode(type){
       const PX_PER_MM_RENDER = TARGET_DPI / 25.4;
       const CSS_PX_PER_MM = 96 / 25.4;   // ブラウザ表示の実寸換算
       const JAN_X_MM = 0.33 * JAN_SCALE;
-      const JAN_H_MM = 22.86 * JAN_SCALE;
+      const JAN_H_MM = 19.86 * JAN_SCALE;
       const JAN_L_MM = 37.29 * JAN_SCALE;
       const JAN_Q_MM = 3.63 * JAN_SCALE;
       const JAN_TOTAL_W_MM = JAN_L_MM + 2*JAN_Q_MM;
@@ -682,6 +694,12 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
 
         const sumExcl = printPrice + opt.optionsTotal - state.coupon + dueAdd; // はがき代を除く
         document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it => it.cat !== 'はがき代').reduce((s,it)=>s+(it.sum||0),0))}`;
+        // 合計金額（はがき代を含む）
+        try{
+          const sumIncl = items.reduce((s,it)=>s+(it.sum||0),0);
+          const inclEl = document.getElementById('sumInclCard');
+          if (inclEl) inclEl.textContent = `¥${yen(sumIncl)}`;
+        }catch(_){/* no-op */}
         // はがき代バーコード表示（年賀/通常のみ）
         (function(){
           try{
