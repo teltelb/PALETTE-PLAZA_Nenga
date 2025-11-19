@@ -28,6 +28,9 @@
       .pill { display:inline-flex; align-items:center; gap:.5rem; border-radius:9999px; background:#f1f5f9; padding:.25rem .75rem; font-size:12px; color:#475569; }
       /* Hide 'コメントのみおまかせ' option */
       label:has(#optCommentOnly) { display: none !important; }
+      /* Active state for 合計ボタン: 明細表示中のものを強調 */
+      #dueAmount button.due-active { background-color:#2563eb !important; border-color:#2563eb !important; color:#ffffff !important; }
+      #dueAmount button.due-active * { color:#ffffff !important; }
     </style>
   </head>
   <body class="min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 text-slate-800">
@@ -421,6 +424,7 @@ function getCardBarcode(type){
       const ceil10 = (n) => Math.max(10, Math.ceil((n || 0)/10) * 10);
       const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
       const fmtMD = (date) => date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
+      const fmtWeekdayJa = (date) => ['日','月','火','水','木','金','土'][date.getDay()];
 
      // 合計セルからも使い回す入力状態リーダー
        function readState() {
@@ -597,7 +601,26 @@ function getCardBarcode(type){
           });
         }catch(_){}
       }
+      // --- 合計ボタンのアクティブ表示切替 ---
+      function setActiveDueButton(idx){
+        try{
+          const target = String(idx);
+          document.querySelectorAll('#dueAmount button[data-due-index]')
+            .forEach(b => {
+              const isActive = (String(b.getAttribute('data-due-index')) === target);
+              if (isActive) {
+                b.classList.add('due-active');
+                b.setAttribute('aria-pressed', 'true');
+              } else {
+                b.classList.remove('due-active');
+                b.setAttribute('aria-pressed', 'false');
+              }
+            });
+        }catch(_){}
+      }
 function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
+        // アクティブボタンをハイライト
+        setActiveDueButton(selectedIdx);
         const printPrice = calcPrintPrice(state.artwork, state.finish, state.orderQty, state.superEarly, state.early);
         const cardCost   = calcCardCost(state.cardType, state.orderQty, state.bringInQty);
         const opt        = calcOptions(state);
@@ -796,7 +819,7 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
           const th = document.createElement('th');
           th.className = "px-3 py-2 text-center align-bottom";
           th.innerHTML = `<div class="text-[14px] font-medium text-slate-700">${l.name}</div>
-                          <div class="mt-0.5 text-xs text-slate-500">${fmtMD(d)}</div>`;
+                          <div class="mt-0.5 text-sm font-medium text-slate-600">${fmtMD(d)}(${fmtWeekdayJa(d)})</div>`;
           head.appendChild(th);
 
           const td = document.createElement('td');
@@ -805,6 +828,8 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
           // ボタン本体（セル全面クリック可能＆視認性UP）
           const btn = document.createElement('button');
           btn.type = "button";
+          btn.setAttribute('data-due-index', String(idx));
+          btn.setAttribute('aria-pressed', 'false');
           btn.className = [
             "group w-full rounded-xl border border-slate-300 bg-white",
             "px-4 py-3 text-center text-[16px] font-semibold text-slate-800",
@@ -968,4 +993,3 @@ function computePrintBarcodes(state){
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 </body>
 </html>
-
