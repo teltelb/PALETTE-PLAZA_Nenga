@@ -976,7 +976,7 @@ function computePrintBarcodes(state){
         else if (g === 'STANDARD') off += 630*2;
         else if (g === 'PREMIUM') off += 630*3;
         else if (g === 'HIGH') off += 630*4;
-        const net = Math.max(0, (state.orderQty|0) - (state.bringInQty|0));
+        const net = Math.max(0, state.orderQty);
         const block = Math.max(1, Math.ceil(net/10));
         const qtyOffset = (block - 1) * 10;
         const main7 = String(Number(base7) + off + Math.min(qtyOffset, 190)).padStart(7,'0');
