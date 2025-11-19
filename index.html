@@ -387,8 +387,8 @@ function getCardBarcode(type){
           const hasCoupon = !!(s.coupon > 0);
           const dataUnit = Math.max(0, UNIT.addrData - (hasCoupon ? ADDR_COUPON_DISCOUNT.data : 0));
           const paperUnit = Math.max(0, UNIT.addrPaper - (hasCoupon ? ADDR_COUPON_DISCOUNT.paper : 0));
-          const dataName = hasCoupon ? '宛名印刷（データ）20' : '宛名印刷（データ）';
-          const paperName = hasCoupon ? '宛名印刷（紙媒体）50' : '宛名印刷（紙媒体）';
+          const dataName = hasCoupon ? '宛名印刷（データ）' : '宛名印刷（データ）';
+          const paperName = hasCoupon ? '宛名印刷（紙媒体）' : '宛名印刷（紙媒体）';
           // 宛名（データ）のバーコードは条件で切替
           // ・クーポン未指定: 68210304
           // ・クーポン指定あり: 68210403
@@ -612,13 +612,21 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
           const finLabel = state.finish === 'photo' ? '写真キレイ仕上げ' : '印刷仕上げ';
           const __pbc = computePrintBarcodes(state);
           const addrMeta = getAddrLineMeta(state);
-          items.push({ cat: '印刷', name: `${finLabel} / ${state.artwork || '-'}`, code: (__pbc.main || '-'), unit: printPrice, qty: 1, sum: printPrice });
+          items.push({ cat: '印刷', name: `${finLabel}`, code: (__pbc.main || '-'), unit: printPrice, qty: 1, sum: printPrice });
         if ((__pbc.extraQty || 0) > 0){
           const __unit = extraUnitPrice(state);
           items.push({ cat: '印刷（200枚以降）', name: `${finLabel} / 追加コード`, code: __pbc.extraCode || '-', unit: __unit, qty: __pbc.extraQty, sum: __unit * __pbc.extraQty });
         }
 
-        const dueName = dueDiscount > 0 ? `${dueLabel}（${dueDiscount}）` : dueLabel;
+        let dueName = dueLabel;
+
+        if (dueDiscount > 0) {
+          dueName = `${dueLabel}（-${dueDiscount}）`;
+        } else {
+          // dueAdd が 0 のときはカッコ表示なし or （-0）どちらでも可
+          // 必要なら↓のコメントを外す
+          // dueName = `${dueLabel}（-0）`;
+        }
         items.push({ cat: '納期', name: dueName, code: dueCode, unit: dueAdd, qty: 1, sum: dueAdd });
 
           if (addrMeta.data.qty > 0)  items.push({ cat: 'オプション', name: addrMeta.data.name, code: addrMeta.data.code, unit: addrMeta.data.unit,  qty: addrMeta.data.qty, sum: addrMeta.data.sum });
