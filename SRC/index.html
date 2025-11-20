@@ -256,16 +256,31 @@
                   <div class="overflow-x-auto">
                     <table class="min-w-full border-collapse text-[14px]">
                       <tbody>
-                        <tr class="border-b border-slate-300">
+                        <tr>
+                          <td class="px-3 py-2 text-left">印刷料金</td>
+                          <td class="px-3 py-2 text-right"><span id="sumPrintDue" class="font-semibold"></span></td>
+                        </tr>
+                        <tr>
+                          <td class="px-3 py-2 text-left">オプション代</td>
+                          <td class="px-3 py-2 text-right"><span id="sumOptions" class="font-semibold"></span></td>
+                        </tr>
+                        <tr>
+                          <td class="px-3 py-2 text-left">クーポン値引き</td>
+                          <td class="px-3 py-2 text-right"><span id="sumCoupon" class="font-semibold"></span></td>
+                        </tr>
+                        <tr class="border-t border-slate-300">
                           <td class="px-3 py-2 text-left">合計（はがき除く）</td>
                           <td class="px-3 py-2 text-right"><span id="sumExclCard" class="font-semibold"></span></td>
                         </tr>
-                        <tr>
+                        <tr class="border-t border-slate-300">
+                          <td class="px-3 py-2 text-left">はがき代</td>
+                          <td class="px-3 py-2 text-right"><span id="sumCardCost" class="font-semibold"></span></td>
+                        </tr>
+                        <tr class="border-t border-slate-300">
                           <td class="px-3 py-2 text-left">総計（はがき含む）</td>
                           <td class="px-3 py-2 text-right"><span id="sumInclCard" class="font-semibold"></span></td>
                         </tr>
-                      </tbody>
-                    </table>
+                      </tbody>                    </table>
                   </div>
                 </div>
                 </div>
@@ -724,30 +739,38 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
         });
 
         const sumExcl = printPrice + opt.optionsTotal - state.coupon + dueAdd; // はがき代を除く
-        document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it => it.cat !== 'はがき代').reduce((s,it)=>s+(it.sum||0),0))}`;
+        
+// --- added totals ---
+const printTotal = printPrice + dueAdd;
+const optionTotal = opt.optionsTotal;
+const couponTotal = -state.coupon;
+const cardTotal  = items.filter(it => it.cat === 'はがき代').reduce((s,it)=>s+(it.sum||0),0);
+
+(function(){
+  const el = document.getElementById('sumPrintDue');
+  if (el) el.textContent = `¥${yen(printTotal)}`;
+})();
+(function(){
+  const el = document.getElementById('sumOptions');
+  if (el) el.textContent = `¥${yen(optionTotal)}`;
+})();
+(function(){
+  const el = document.getElementById('sumCoupon');
+  if (el) el.textContent = `¥${yen(couponTotal)}`;
+})();
+(function(){
+  const el = document.getElementById('sumCardCost');
+  if (el) el.textContent = `¥${yen(cardTotal)}`;
+})();
+
+// original:
+document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it => it.cat !== 'はがき代').reduce((s,it)=>s+(it.sum||0),0))}`;
         // 合計金額（はがき代を含む）
         try{
           const sumIncl = items.reduce((s,it)=>s+(it.sum||0),0);
           const inclEl = document.getElementById('sumInclCard');
           if (inclEl) inclEl.textContent = `¥${yen(sumIncl)}`;
         }catch(_){/* no-op */}
-        // はがき代バーコード表示（年賀/通常のみ）
-        (function(){
-          try{
-            const bc = getCardBarcode(state.cardType);
-            let bcEl = document.getElementById('cardBarcodeLabel');
-            if (!bcEl){
-              const sumEl = document.getElementById('sumCardCost');
-              if (sumEl && sumEl.parentElement){
-                bcEl = document.createElement('div');
-                bcEl.id = 'cardBarcodeLabel';
-                bcEl.className = 'text-xs text-slate-500 mt-1';
-                sumEl.parentElement.appendChild(bcEl);
-              }
-            }
-            if (bcEl){ bcEl.textContent = `はがき代バーコード: ${bc}`; }
-          }catch(e){/* no-op */}
-        })();
     
 
         const invoice = document.getElementById('invoice');
