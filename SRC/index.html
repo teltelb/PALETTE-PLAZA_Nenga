@@ -886,6 +886,12 @@ document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it =>
           labels[5] = { name: '7日後仕上げ', offset: 7 };
         }
         const dueAdds = rawAdds; // 計算は従来の配列（5日後相当）を使用
+        // 宛名印刷の有無を事前判定（明細票と同じ条件に合わせる）
+        let hasAddrPrinting = false;
+        try {
+          const addrMetaForTotal = getAddrLineMeta(state);
+          hasAddrPrinting = !!((addrMetaForTotal && (addrMetaForTotal.data?.qty || 0) > 0) || (addrMetaForTotal && (addrMetaForTotal.paper?.qty || 0) > 0));
+        } catch(_) { hasAddrPrinting = false; }
         const dueBarcode = getDueBarcode(today);
         labels.forEach((l, idx) => {
           const d = addDays(today, l.offset);
@@ -916,7 +922,11 @@ document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it =>
             "active:translate-y-[1px]"
           ].join(" ");
 
-          const totalWithDue = baseTotal + (dueAdds[idx] || 0);
+          const dueAddSel = (dueAdds[idx] || 0);
+          // 明細票では、宛名印刷がある場合は納期加算を宛名分でも1回加える。
+          // ボタン側の合計もこれに合わせて、印刷分 + 宛名分の納期加算を反映する。
+          const addrDue = (hasAddrPrinting && dueAddSel > 0) ? dueAddSel : 0;
+          const totalWithDue = baseTotal + dueAddSel + addrDue;
           btn.setAttribute("aria-label", `${l.name} の合計 ¥${yen(totalWithDue)} の明細を表示`);
           btn.title = "クリックで料金明細を表示";
           btn.innerHTML = `
