@@ -350,6 +350,10 @@ function getCardBarcode(type){
       function getDueBarcode(now){
         return isBeforeNovEnd(now) ? '68217006' : '68210908';
       }
+      // 宛名用 納期バーコード: 11月末まで 68217105、それ以降 68211103
+      function getAddrDueBarcode(now){
+        return isBeforeNovEnd(now) ? '68217105' : '68211103';
+      }
       const DUE_LABELS = [
         { name: "当日仕上げ", offset: 0 },
         { name: "翌日仕上げ", offset: 1 },
@@ -644,12 +648,22 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
         const dueCode    = dueBarcode || getDueBarcode();
         const baseDue    = (__dueAdds && __dueAdds.length > 0) ? __dueAdds[0] : 0;
         const dueDiscount = Math.max(0, baseDue - dueAdd);
-        const dueLabel   = DUE_LABELS[selectedIdx]?.name || '-';
+        const dueLabel   = (state.finish === 'photo' && selectedIdx === 5)
+                           ? '7日後仕上げ'
+                           : (DUE_LABELS[selectedIdx]?.name || '-');
 
         const items = [];
           const finLabel = state.finish === 'photo' ? '写真キレイ仕上げ' : '印刷仕上げ';
           const __pbc = computePrintBarcodes(state);
           const addrMeta = getAddrLineMeta(state);
+          // クーポン選択かつ宛名印刷がある場合、宛名印刷系品名の先頭に「ㇰ）」を付与
+          const __useMarkForAddr = (state.coupon > 0) && ((addrMeta.data.qty > 0) || (addrMeta.paper.qty > 0));
+          const __markNameIfAddr = (name) => {
+            try{
+              const t = String(name || '');
+              return (__useMarkForAddr && t.indexOf('宛名印刷') >= 0) ? ('ㇰ）' + t) : t;
+            }catch(_){ return name; }
+          };
           items.push({ cat: '印刷', name: `${finLabel}`, code: (__pbc.main || '-'), unit: printPrice, qty: 1, sum: printPrice });
         if ((__pbc.extraQty || 0) > 0){
           const __unit = extraUnitPrice(state);
@@ -667,8 +681,18 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
         }
         items.push({ cat: '納期', name: dueName, code: dueCode, unit: dueAdd, qty: 1, sum: dueAdd });
 
-          if (addrMeta.data.qty > 0)  items.push({ cat: 'オプション', name: addrMeta.data.name, code: addrMeta.data.code, unit: addrMeta.data.unit,  qty: addrMeta.data.qty, sum: addrMeta.data.sum });
-          if (addrMeta.paper.qty > 0) items.push({ cat: 'オプション', name: addrMeta.paper.name, code: addrMeta.paper.code, unit: addrMeta.paper.unit, qty: addrMeta.paper.qty, sum: addrMeta.paper.sum });
+        // 宛名印刷が入力されている場合、選択された納期名・単価で (宛名) 行を追加
+        try{
+          if (((addrMeta.data.qty > 0) || (addrMeta.paper.qty > 0)) && (dueAdd > 0)) {
+            const addrDueCode = getAddrDueBarcode(new Date());
+            const addrDueAdd  = dueAdd; // 選択中の納期と同額
+            const addrDueName = `${dueName}(宛名)`; // 当日/翌日/2日後... に追従（割引表記も同様）
+            items.push({ cat: '納期', name: addrDueName, code: addrDueCode, unit: addrDueAdd, qty: 1, sum: addrDueAdd });
+          }
+        }catch(_){/* no-op */}
+
+          if (addrMeta.data.qty > 0)  items.push({ cat: 'オプション', name: __markNameIfAddr(addrMeta.data.name),  code: addrMeta.data.code,  unit: addrMeta.data.unit,  qty: addrMeta.data.qty,  sum: addrMeta.data.sum });
+          if (addrMeta.paper.qty > 0) items.push({ cat: 'オプション', name: __markNameIfAddr(addrMeta.paper.name), code: addrMeta.paper.code, unit: addrMeta.paper.unit, qty: addrMeta.paper.qty, sum: addrMeta.paper.sum });
           if (addrMeta.fix.qty > 0)   items.push({ cat: 'オプション', name: addrMeta.fix.name,   code: addrMeta.fix.code,   unit: addrMeta.fix.unit,   qty: addrMeta.fix.qty,   sum: addrMeta.fix.sum  });
 
           // 宛名（データ）あり + DMクーポン指定時は情報行を追加（0円）
@@ -771,7 +795,28 @@ document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it =>
           const inclEl = document.getElementById('sumInclCard');
           if (inclEl) inclEl.textContent = `¥${yen(sumIncl)}`;
         }catch(_){/* no-op */}
-    
+
+        // 強調表示: 合計（はがき代除く）/ 総計（はがき代含む）
+        (function(){
+          function emphasize(id, px){
+            try{
+              const el = document.getElementById(id);
+              if (!el) return;
+              el.classList.add('font-bold','tabular-nums');
+              try { el.style.fontSize = px; } catch(_){}
+              try { el.style.fontWeight = '700'; } catch(_){}
+              const row = el.closest('tr');
+              const labelCell = row && row.querySelector('td:first-child');
+              if (labelCell) {
+                labelCell.classList.add('font-bold');
+                try { labelCell.style.fontSize = px; } catch(_){}
+                try { labelCell.style.fontWeight = '700'; } catch(_){}
+              }
+            }catch(_){/* no-op */}
+          }
+          emphasize('sumExclCard','17px');
+          emphasize('sumInclCard','17px');
+        })();
 
         const invoice = document.getElementById('invoice');
         invoice.classList.remove('hidden');
@@ -835,18 +880,27 @@ document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it =>
         amt.innerHTML = "";
 
         const today = new Date();
-        const dueAdds = getDueAdds(today);
+        const rawAdds = getDueAdds(today);
+        const labels = DUE_LABELS.slice();
+        if (state.finish === 'photo' && labels.length >= 6) {
+          labels[5] = { name: '7日後仕上げ', offset: 7 };
+        }
+        const dueAdds = rawAdds; // 計算は従来の配列（5日後相当）を使用
         const dueBarcode = getDueBarcode(today);
-        DUE_LABELS.forEach((l, idx) => {
+        labels.forEach((l, idx) => {
           const d = addDays(today, l.offset);
           const th = document.createElement('th');
-          th.className = "px-3 py-2 text-center align-bottom";
+          th.className = (labels.length === 1)
+            ? "px-3 py-2 text-left align-bottom"
+            : "px-3 py-2 text-center align-bottom";
           th.innerHTML = `<div class="text-[14px] font-medium text-slate-700">${l.name}</div>
                           <div class="mt-0.5 text-sm font-medium text-slate-600">${fmtMD(d)}(${fmtWeekdayJa(d)})</div>`;
           head.appendChild(th);
 
           const td = document.createElement('td');
-          td.className = "px-2 py-2 align-middle";
+          td.className = (labels.length === 1)
+            ? "px-2 py-2 align-middle text-left"
+            : "px-2 py-2 align-middle";
 
           // ボタン本体（セル全面クリック可能＆視認性UP）
           const btn = document.createElement('button');
@@ -866,9 +920,19 @@ document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it =>
           btn.setAttribute("aria-label", `${l.name} の合計 ¥${yen(totalWithDue)} の明細を表示`);
           btn.title = "クリックで料金明細を表示";
           btn.innerHTML = `
-            <div>¥${yen(totalWithDue)} </div>
+            <div>¥${yen(totalWithDue)}</div>
             <div class="mt-0.5 text-[11px] font-normal text-slate-500">明細を見る</div>
           `;
+
+          // 写真キレイ仕上げ時は、5日後(=7日後に表示)以外のボタンを非活性化し、表示は「ー」のみ
+          if (state.finish === 'photo' && idx !== (labels.length - 1)) {
+            try {
+              btn.disabled = true;
+              btn.setAttribute('aria-disabled', 'true');
+              btn.classList.add('opacity-50','cursor-not-allowed');
+              btn.innerHTML = `<div class="leading-none">ー</div>`;
+            } catch(_) {}
+          }
 
           // クリック & キーボード操作
             btn.addEventListener('click', () => {
