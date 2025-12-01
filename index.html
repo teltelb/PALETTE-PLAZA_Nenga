@@ -478,8 +478,9 @@ function getCardBarcode(type){
         const grade = CODE_TO_GRADE[code];
         if (!grade || !finish) return 0;
         const base = BASE10_PRICE[grade][finish];
-        const qty = ceil10(qtyRaw);           // 10枚単位に切り上げ
-        const blocks = Math.max(1, qty/10);   // 10枚=1ブロック
+        const qty10 = ceil10(qtyRaw);                // 10枚単位に切り上げ
+        const cappedQty = Math.min(qty10, 200);      // 200枚までは通常計算、それ以上は別行で計上
+        const blocks = Math.max(1, cappedQty/10);    // 10枚=1ブロック
 
         let price = base;
         if (blocks > 1) {
@@ -641,6 +642,7 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
         // アクティブボタンをハイライト
         setActiveDueButton(selectedIdx);
         const printPrice = calcPrintPrice(state.artwork, state.finish, state.orderQty, state.superEarly, state.early);
+        const extraPrint = calcExtraPrint(state);
         const cardCost   = calcCardCost(state.cardType, state.orderQty, state.bringInQty);
         const opt        = calcOptions(state);
         const __dueAdds  = Array.isArray(dueAdds) ? dueAdds : DUE_ADD_DEC;
@@ -665,9 +667,9 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
             }catch(_){ return name; }
           };
           items.push({ cat: '印刷', name: `${finLabel}`, code: (__pbc.main || '-'), unit: printPrice, qty: 1, sum: printPrice });
-        if ((__pbc.extraQty || 0) > 0){
-          const __unit = extraUnitPrice(state);
-          items.push({ cat: '印刷（200枚以降）', name: `${finLabel} / 追加コード`, code: __pbc.extraCode || '-', unit: __unit, qty: __pbc.extraQty, sum: __unit * __pbc.extraQty });
+        if (extraPrint.extraQty > 0){
+          // 200枚超過分は追加コードで計上する
+          items.push({ cat: '印刷（200枚以降）', name: `${finLabel} / 追加コード`, code: __pbc.extraCode || '-', unit: extraPrint.unit, qty: extraPrint.extraQty, sum: extraPrint.extraSum });
         }
 
         let dueName = dueLabel;
@@ -762,10 +764,10 @@ function renderInvoice(selectedIdx, state, dueAdds, dueBarcode) {
           tbody.appendChild(tr);
         });
 
-        const sumExcl = printPrice + opt.optionsTotal - state.coupon + dueAdd; // はがき代を除く
+        const sumExcl = printPrice + extraPrint.extraSum + opt.optionsTotal - state.coupon + dueAdd; // はがき代を除く
         
 // --- added totals ---
-const printTotal = printPrice + dueAdd;
+const printTotal = printPrice + extraPrint.extraSum + dueAdd;
 const optionTotal = opt.optionsTotal;
 const couponTotal = -state.coupon;
 const cardTotal  = items.filter(it => it.cat === 'はがき代').reduce((s,it)=>s+(it.sum||0),0);
@@ -866,12 +868,13 @@ document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it =>
 
         // 計算
         const printPrice = calcPrintPrice(state.artwork, state.finish, state.orderQty, state.superEarly, state.early);
+        const extraPrint = calcExtraPrint(state);
         const cardCost = calcCardCost(state.cardType, state.orderQty, state.bringInQty);
         const opt = calcOptions(state);
         const coupon = state.coupon;
 
         // 合計（納期加算を除く）
-        const baseTotal = Math.max(0, printPrice + cardCost + opt.optionsTotal - coupon);
+        const baseTotal = Math.max(0, printPrice + extraPrint.extraSum + cardCost + opt.optionsTotal - coupon);
 
         // テーブル構築
         const head = document.getElementById('dueHead');
@@ -968,7 +971,7 @@ document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it =>
         const breakdown = document.getElementById('breakdown');
         breakdown.innerHTML = `
           <div class="flex flex-wrap items-center gap-3">
-            <span class="pill">印刷代: <b>¥${yen(printPrice)}</b></span>
+            <span class="pill">印刷代: <b>¥${yen(printPrice + extraPrint.extraSum)}</b></span>
             <span class="pill">はがき代: <b>¥${yen(cardCost)}</b></span>
             <span class="pill">オプション: <b>¥${yen((opt.addr||0) + (opt.checks||0) + (opt.scans||0))}</b></span>
             <span class="pill">その他オプション: <b>¥${yen(opt.checks + opt.scans)}</b></span>
@@ -1033,6 +1036,13 @@ document.getElementById('sumExclCard').textContent = `¥${yen(items.filter(it =>
         if (state.superEarly) return (state.finish === 'photo') ? 528 : 440;
         if (state.early)      return (state.finish === 'photo') ? 594 : 495;
         return (state.finish === 'photo') ? 660 : 550;
+      }
+      // 200枚超過分の印刷単価計算（10枚単位）
+      function calcExtraPrint(state){
+        const unit = extraUnitPrice(state);
+        const qty10 = ceil10(state.orderQty);
+        const extraBlocks = Math.max(0, Math.ceil(Math.max(0, qty10 - 200) / 10));
+        return { extraQty: extraBlocks, unit, extraSum: extraBlocks * unit };
       }
 // 接頭辞→グレード判定（★マップ）
 // ■ハイグレード★★★★: PHG, DN, ZN, RN, UN, SN, LN
